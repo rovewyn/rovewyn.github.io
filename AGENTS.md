@@ -31,7 +31,15 @@ Prefer the existing theme variables and keep responsive layouts usable. Keep the
 
 ## Testing Guidelines
 
-No automated testing framework or coverage target is configured. For page changes, start a temporary local server with the command above and check the affected content or behavior in a browser. For layout changes, check desktop and mobile widths. Stop the server after verification.
+No automated testing framework or coverage target is configured. For page changes, start a temporary local server and check the affected content or behavior in a browser. For layout changes, check desktop and mobile widths. Open the preview for the user and share its local URL.
+
+Keep the preview server running until any condition is met:
+
+- The user confirms they have finished previewing.
+- The user asks to stop it.
+- This work is complete: its changes were successfully pushed to remote `main`, or its pull request was merged.
+
+Local verification alone does not end the preview session.
 
 ## Commit & Pull Request Guidelines
 
