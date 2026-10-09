@@ -11,7 +11,7 @@ Curious by nature. Building useful things with code.
 - An unlit Three.js workspace with one external monitor, a Mac mini, an open MacBook Pro on the left, and a modeled wireless mouse. Cyan screen light and small lime accents echo the `#D8F36A` mark. Only screens and light from the window illuminate the room.
 - A procedural skyline with 65 buildings in five depth rows and 2,982 window instances. Windows use ordinary warm-white and pale-yellow light. Three framed neon signs use fictional glyphs with no language or meaning mapping.
 - Ground streets with moving cars and vans, two trains, elevated road traffic, and six air corridors add activity. Air taxis, passenger shuttles, cargo lifters, and courier drones have distinct silhouettes and speeds. The background image contains only night sky and clouds; every visible building and vehicle is procedural 3D geometry.
-- Select **Open profile**, the main monitor, or **About** to open the introduction.
+- Select **Profile**, the main monitor, or **About** to open the introduction.
 - Enable **Scan** and inspect the three desk devices. The monitor captures eight encoded fragments, the Mac mini records the encoder's calibration, and the MacBook holds a locked login screen. Combine their route records to restore fragment order, decode the daily password, and unlock the MacBook. Its **Recovered records** panel keeps inspected clues available.
 - Select **Sound off** to hear soft stereo rain with scattered droplets. Sound fades in and out; every visit starts muted.
 - Close a panel with **Return to room** or Escape. Keyboard and touch controls provide the same actions.
@@ -22,9 +22,11 @@ The puzzle is a local simulated session. A date-seeded generator produces the sa
 
 The sky image's exact prompt, disclosed tool parameters, source output, compression command, metadata, and checksums are recorded in [assets/night-sky.prompt.md](assets/night-sky.prompt.md). The sky is mapped onto a world-space dome, shared by the same camera as the buildings. Static fallback uses the same sky image. Scene composition, palette, traffic, devices, and lighting are documented in [assets/world.scene.md](assets/world.scene.md).
 
-## Writing
+## Blog
 
-The article at `/writing/substrate-browser/` records the local browser Actor experiment. It contains a labeled state replay and an interactive view of curated numeric samples. Original logs, profiles, session values, and screenshots remain local. Its source is in `writing/substrate-browser/`; Vite builds it as a separate HTML entry.
+Select the MacBook or **Blog** in normal room mode to browse posts. Post links use `target="_blank"`. The full index at `/blog/` also works without JavaScript. Scan mode keeps the existing MacBook puzzle.
+
+The article at `/blog/2026/10/09/substrate-browser/` records the local browser Actor experiment. It contains a labeled state replay and an interactive view of curated numeric samples. Original logs, profiles, session values, and screenshots remain local. Its source is in `blog/2026/10/09/substrate-browser/`; Vite builds the index and post as separate HTML entries. The earlier `/writing/substrate-browser/` URL redirects to the new post path and keeps its section hash.
 
 ## Local Development
 
@@ -52,11 +54,11 @@ npm run build
 npm test
 ```
 
-Playwright checks three user paths in desktop and emulated phone contexts: profile and Scan interaction, muted-by-default sound with an opt-in toggle, and access to the introduction and GitHub link without JavaScript. Checks use reduced motion so continuous software rendering does not compete with interface actions; inspect normal animation in the browser preview. Failed checks save a screenshot and trace in the ignored `test-results/` directory.
+Playwright checks three user paths in desktop and emulated phone contexts: profile and Scan interaction, muted-by-default sound with an opt-in toggle, and access to the introduction without JavaScript. Checks use reduced motion so continuous software rendering does not compete with interface actions; inspect normal animation in the browser preview. Failed checks save a screenshot and trace in the ignored `test-results/` directory.
 
 For visual QA, check 1440×900, 768×1024, 390×844, and 320×568. Inspect normal and scan modes, panel return focus, reduced motion, and sound controls. In browser developer tools, the canvas's `data-fps` attribute contains a rolling frame-rate sample while animation is running; record the browser, viewport, and actual device with any measurement.
 
-Reduced motion stops ambient animation and camera parallax. Hidden pages pause rendering and suspend audio. WebGL failure or context loss switches to the static theme; the introduction and GitHub link also work without JavaScript. High-contrast mode uses the static page.
+Reduced motion stops ambient animation and camera parallax. Hidden pages pause rendering and suspend audio. WebGL failure or context loss switches to the static theme; the introduction also works without JavaScript. High-contrast mode uses the static page.
 
 ## Source Layout
 

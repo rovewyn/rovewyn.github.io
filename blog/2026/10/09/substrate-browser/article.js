@@ -24,13 +24,13 @@ document.querySelectorAll('[data-stage]').forEach(button => {
 });
 
 const definitions = {
-  resumeToFirstToolSeconds: { unit: 's', factor: 1, text: 'Timing starts before the ResumeActor command. It ends after the first successful read of both existing pages. Sample numbers show collection order.' },
-  suspendSeconds: { unit: 's', factor: 1, text: 'The host measured the time for the SuspendActor command. The measurement includes snapshot upload. The Actor had two local test tabs.' },
+  resumeToFirstToolSeconds: { unit: 's', factor: 1, text: 'I started the timer before ResumeActor. I stopped it after Playwright MCP returned values from both web pages.' },
+  suspendSeconds: { unit: 's', factor: 1, text: 'I timed the SuspendActor command from start to finish. The time includes snapshot upload.' },
   resumeControlSeconds: { unit: 's', factor: 1, text: 'The host measured the time for the ResumeActor command. The measurement includes the temporary control connection. Browser tool readiness has a separate measurement.' },
   browserLaunchSeconds: { unit: 's', factor: 1, text: 'Timing starts before the first navigation call. It includes Chromium startup and the first page load. The Actor had resumed, and MCP initialization was complete. Image download and template preparation are excluded. These samples came from a separate set of temporary Actors.' },
   warmSnapshotToolSeconds: { unit: 'ms', factor: 1000, text: 'The host measured one browser_snapshot call on the running Actor. This tool reads the accessibility tree. It does not call SuspendActor. These samples came from the separate browser launch test.' },
-  runningMemoryBytes: { unit: 'MiB', factor: 1 / (1024 ** 2), text: 'We read memory.current from the Actor cgroup after each ResumeActor call. This value includes gVisor and guest processes. It is not the sum of resident memory used by guest processes.' },
-  snapshotDiskBytes: { unit: 'MiB', factor: 1 / (1024 ** 2), text: 'We measured RustFS disk allocation with du -sk. We multiplied this value by 1024 and converted it to MiB. This value includes allocation metadata. It excludes the shared browser image.' },
+  runningMemoryBytes: { unit: 'MiB', factor: 1 / (1024 ** 2), text: 'After ResumeActor, I read both pages and clicked once. I then read memory.current from the Actor cgroup. This reading includes gVisor, guest processes, caches, and kernel data.' },
+  snapshotDiskBytes: { unit: 'MiB', factor: 1 / (1024 ** 2), text: 'After SuspendActor, I measured the snapshot directory in RustFS with du -sk. I converted that reading to bytes, then to MiB. The value includes storage metadata.' },
 };
 
 const format = value => value.toFixed(3);
@@ -40,6 +40,7 @@ function stats(values) {
 }
 
 function drawPlot(svg, values, options) {
+  const itemLabel = options.itemLabel ?? 'Sample';
   const width = svg.clientWidth;
   if (width === 0) return;
   const height = options.height;
@@ -56,8 +57,8 @@ function drawPlot(svg, values, options) {
     svg.append(node);
     return node;
   }
-  add('title', {}, `${options.title}: ten samples`);
-  svg.setAttribute('aria-label', `${options.title}. Ten samples. Median ${format(options.median)} ${options.unit}. Use the sample buttons to read each value.`);
+  add('title', {}, `${options.title}: ten ${itemLabel.toLowerCase()}s`);
+  svg.setAttribute('aria-label', `${options.title}. Ten ${itemLabel.toLowerCase()}s. Median ${format(options.median)} ${options.unit}. Use the ${itemLabel.toLowerCase()} buttons to read each value.`);
   options.ticks.forEach(value => {
     add('line', { x1: 42, x2: right, y1: y(value), y2: y(value), class: 'chart-grid' });
     add('text', { x: 33, y: y(value) + 4, 'text-anchor': 'end', class: 'chart-axis-label' }, value === 0 ? '0' : value.toFixed(options.top < 10 ? 1 : 0));
@@ -67,7 +68,7 @@ function drawPlot(svg, values, options) {
   values.forEach((value, index) => {
     const circle = add('circle', { cx: x(index), cy: y(value), r: options.selected === index ? 6 : 5, class: options.selected === index ? 'chart-point selected' : 'chart-point' });
     const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-    title.textContent = `Sample ${index + 1}: ${format(value)} ${options.unit}`;
+    title.textContent = `${itemLabel} ${index + 1}: ${format(value)} ${options.unit}`;
     circle.append(title);
     circle.addEventListener('click', () => options.onSelect(index));
     add('text', { x: x(index), y: bottom + 23, 'text-anchor': 'middle', class: 'chart-axis-label' }, index + 1);
@@ -75,13 +76,13 @@ function drawPlot(svg, values, options) {
   add('text', { x: (42 + right) / 2, y: height - 5, 'text-anchor': 'middle', class: 'chart-axis-label' }, options.axisLabel);
 }
 
-function sampleButtons(container, values, unit, onSelect) {
+function sampleButtons(container, values, unit, onSelect, itemLabel = 'Sample') {
   container.replaceChildren();
   values.forEach((value, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = index + 1;
-    button.setAttribute('aria-label', `Sample ${index + 1}: ${format(value)} ${unit}`);
+    button.setAttribute('aria-label', `${itemLabel} ${index + 1}: ${format(value)} ${unit}`);
     button.setAttribute('aria-pressed', 'false');
     button.addEventListener('click', () => onSelect(index));
     container.append(button);
@@ -104,11 +105,11 @@ document.querySelectorAll('.metric-plot').forEach(figure => {
   }
   function render() {
     // Both lifecycle plots use the same 0–2 second scale.
-    drawPlot(svg, values, { title, height: 310, top: 2, ticks: [0, 0.5, 1, 1.5, 2], median: summary.median, unit: 's', selected, onSelect: selectSample, axisLabel: 'Sequential cycle' });
+    drawPlot(svg, values, { title, height: 310, top: 2, ticks: [0, 0.5, 1, 1.5, 2], median: summary.median, unit: 's', selected, onSelect: selectSample, axisLabel: 'Cycle', itemLabel: 'Cycle' });
     [...buttons.children].forEach((button, index) => button.setAttribute('aria-pressed', String(index === selected)));
-    detail.textContent = selected === null ? 'Select a sample. Dashed line: median.' : `Cycle ${selected + 1}: ${format(values[selected])} s. Dashed line: median.`;
+    detail.textContent = selected === null ? 'Select a cycle. Dashed line: median.' : `Cycle ${selected + 1}: ${format(values[selected])} s. Dashed line: median.`;
   }
-  sampleButtons(buttons, values, 's', selectSample);
+  sampleButtons(buttons, values, 's', selectSample, 'Cycle');
   render();
   redraw.set(svg, render);
 });

@@ -66,7 +66,7 @@ function screenTexture(side = false, unlocked = false) {
       ctx.fillText('Profile', 56, 345);
       ctx.fillStyle = '#d1e7ef';
       ctx.font = '19px monospace';
-      ctx.fillText('OPEN PROFILE  ↗', 56, 523);
+      ctx.fillText('PROFILE  ↗', 56, 523);
       ctx.strokeStyle = '#a6d0dc3a';
       ctx.beginPath(); ctx.moveTo(54, 560); ctx.lineTo(966, 560); ctx.stroke();
     }
