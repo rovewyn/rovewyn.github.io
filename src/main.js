@@ -1,4 +1,5 @@
 import { createAmbience } from './audio.js';
+import { createScanPuzzle } from './scan-puzzle.js';
 
 const body = document.body;
 const canvas = document.querySelector('#world-canvas');
@@ -9,7 +10,11 @@ const scanButton = document.querySelector('[data-action="scan"]');
 const soundButton = document.querySelector('[data-action="sound"]');
 const aboutButton = document.querySelector('.controls [data-action="profile"]');
 const workstation = document.querySelector('#workstation-hotspot');
-const secret = document.querySelector('#secret-hotspot');
+const scanNodes = document.querySelector('#scan-nodes');
+const scanHotspots = Array.from(scanNodes.querySelectorAll('[data-scan-node]'));
+const scanContent = document.querySelector('#scan-content');
+const scanPuzzle = createScanPuzzle(scanContent, { onUnlock: value => room?.setTerminalUnlocked(value) });
+const scanMobileQuery = matchMedia('(max-width: 760px)');
 const introduction = document.querySelector('#introduction');
 let room;
 let view = 'room';
@@ -49,40 +54,65 @@ function placeHotspot(element, point, visible) {
 function updateHotspots() {
   const visible = body.dataset.scene === 'ready' && view === 'room';
   placeHotspot(workstation, positions?.monitor, visible && !scanning);
-  placeHotspot(secret, positions?.secret, visible && scanning);
+  scanNodes.hidden = !visible || !scanning;
+  if (scanNodes.hidden) return;
+  scanHotspots.forEach(button => {
+    const point = positions?.[button.dataset.scanNode];
+    button.hidden = !scanMobileQuery.matches && !point?.visible;
+    if (button.hidden || scanMobileQuery.matches) return;
+    const padding = 18;
+    button.style.left = `${Math.max(padding + button.offsetWidth / 2, Math.min(innerWidth - padding - button.offsetWidth / 2, point.x))}px`;
+    button.style.top = `${Math.max(110 + button.offsetHeight / 2, Math.min(innerHeight - padding - button.offsetHeight / 2, point.y))}px`;
+  });
+}
+function updateScanProgress() {
+  document.querySelector('#scan-progress').textContent = scanPuzzle.progressText();
+  hint.textContent = scanning ? 'SIGNAL DETECTED' : '';
+  scanHotspots.forEach(button => {
+    const recorded = scanPuzzle.hasRecord(button.dataset.scanNode);
+    button.dataset.recorded = String(recorded);
+    button.querySelector('.scan-node-state').textContent = recorded ? 'Recorded' : 'Unread';
+    const name = button.querySelector('.scan-node-name').textContent;
+    button.setAttribute('aria-label', `Inspect ${name}${recorded ? ', record recovered' : ''}`);
+  });
 }
 function openDetail(next, trigger = aboutButton) {
-  if (next === 'secret' && !scanning) return;
+  const nodeId = next.startsWith('inspect-') ? next.slice('inspect-'.length) : null;
+  if (nodeId && !scanning) return;
+  const record = nodeId ? scanPuzzle.inspect(nodeId) : null;
+  const isScan = Boolean(record);
+  const isTerminal = nodeId === 'laptop';
   returnTarget = trigger;
-  view = next;
+  view = isScan ? (isTerminal ? 'terminal' : 'scan-clue') : next;
   body.dataset.view = view;
-  const isSecret = next === 'secret';
-  document.querySelector('#dialog-title').textContent = isSecret ? 'Signal found' : 'rovewyn';
-  document.querySelector('#dialog-code').textContent = isSecret ? 'HIDDEN NODE / CONNECTED' : '01 / WORKSTATION';
-  document.querySelector('#dialog-eyebrow').textContent = isSecret ? 'Connection established.' : 'Profile';
-  document.querySelector('#profile-content').hidden = isSecret;
-  document.querySelector('#secret-content').hidden = !isSecret;
-  room?.focus(next);
+  document.querySelector('#dialog-title').textContent = isScan ? record.name : 'rovewyn';
+  document.querySelector('#dialog-code').textContent = isScan ? `${record.index} / ${record.name.toUpperCase()}` : '01 / WORKSTATION';
+  document.querySelector('#dialog-eyebrow').textContent = isTerminal ? 'Local session' : isScan ? 'Device record' : 'Profile';
+  document.querySelector('#profile-content').hidden = isScan;
+  scanContent.hidden = !isScan;
+  updateScanProgress();
+  room?.focus(isScan ? nodeId : view);
   updateHotspots();
   if (!dialog.open) dialog.showModal();
-  status.textContent = isSecret ? 'Hidden signal found.' : 'Workstation opened.';
+  if (isTerminal && !scanPuzzle.isUnlocked()) document.querySelector('#terminal-username').focus();
+  status.textContent = isScan ? `${record.name} record recovered. ${scanPuzzle.progressText()}.` : 'Workstation opened.';
 }
 function closeDetail() {
   view = 'room'; body.dataset.view = view;
   dialog.close(); room?.focus('room'); updateHotspots();
-  (returnTarget?.hidden ? aboutButton : returnTarget).focus();
+  (returnTarget?.getClientRects().length ? returnTarget : aboutButton).focus();
   status.textContent = 'Returned to room.';
 }
 async function act(action, trigger) {
-  if (action === 'profile' || action === 'secret') openDetail(action, trigger);
+  if (action === 'profile' || action.startsWith('inspect-')) openDetail(action, trigger);
   if (action === 'return') closeDetail();
   if (action === 'scan' && room) {
     scanning = !scanning;
     body.dataset.scan = scanning ? 'on' : 'off';
     scanButton.setAttribute('aria-pressed', String(scanning));
     room.setScan(scanning); updateHotspots();
-    hint.textContent = scanning ? 'SIGNAL DETECTED' : '';
-    status.textContent = scanning ? 'Scan enabled. An unknown signal is available in the room.' : 'Scan disabled.';
+    updateScanProgress();
+    status.textContent = scanning ? `Scan enabled. Inspect the three desk devices. ${scanPuzzle.progressText()}.` : 'Scan disabled.';
   }
   if (action === 'sound' && !soundPending) {
     soundPending = true;
@@ -108,6 +138,7 @@ function fallback() {
   document.querySelector('#fallback-status').hidden = false;
   hint.textContent = '';
   updateHotspots();
+  if (view === 'terminal' || view === 'scan-clue') closeDetail();
   status.textContent = 'The 3D room is unavailable. The introduction and GitHub link are still available.';
 }
 async function initialize() {
@@ -118,7 +149,7 @@ async function initialize() {
     const initializedRoom = await createRoom({
       canvas,
       onProject: value => { positions = value; updateHotspots(); },
-      onActivate: action => act(action, action === 'secret' ? secret : workstation),
+      onActivate: action => act(action, scanHotspots.find(button => button.dataset.action === action) || workstation),
       onFailure: fallback,
     });
     if (!active) { initializedRoom.dispose(); return; }

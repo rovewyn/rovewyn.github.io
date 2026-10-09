@@ -25,7 +25,7 @@ function texture(width, height, draw) {
   return result;
 }
 
-function screenTexture(side = false) {
+function screenTexture(side = false, unlocked = false) {
   return texture(1024, 640, (ctx, w, h) => {
     ctx.fillStyle = '#071219';
     ctx.fillRect(0, 0, w, h);
@@ -43,7 +43,9 @@ function screenTexture(side = false) {
     ctx.fillRect(54, 90, 38, 2);
     if (side) {
       ctx.font = '25px monospace';
-      const rows = ['CONNECTION SECURE', '', '01   identity', '02   signal', '03   beyond', '', '_'];
+      const rows = unlocked
+        ? ['ACCESS GRANTED', '', 'RECOVERED / 001', '', 'LOCAL SESSION', '', '_']
+        : ['SESSION LOCKED', '', 'USER    _', 'PASS    _', '', 'LOCAL RECORDS', '_'];
       rows.forEach((row, i) => {
         ctx.fillStyle = i === 0 ? '#c0dbe7' : '#89aebf';
         ctx.fillText(row, 54, 173 + i * 45);
@@ -197,6 +199,11 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
     box(0.025, 0.009, 0.01, metal, w / 2 - 0.08, -h / 2 - 0.035, 0.056, group);
     box(0.085, y - 1.16 - h / 2, 0.085, metal, 0, -(y - 1.16 + h / 2) / 2, -0.02, group);
     box(0.5, 0.025, 0.3, metal, 0, 1.14 - y, 0.05, group);
+    group.traverse(object => {
+      if (!object.isMesh) return;
+      object.userData.scanAction = 'inspect-monitor';
+      if (object !== screen) clickable.push(object);
+    });
     return screen;
   }
   monitor(1.1, 2.02, -1.52, 1.85, 1.15, -0.07);
@@ -215,7 +222,7 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
   const devices = createDeskDevices({ material, screenTexture, makeTexture: texture, textures, green });
   room.add(devices.group); scannable.push(...devices.scanMeshes);
   const { secretNode, ring } = devices;
-  clickable.push(secretNode);
+  clickable.push(...devices.scanTargets);
   // The chair frames the foreground without hiding the screens.
   box(0.8, 0.12, 0.75, material('#100f18'), 3.5, 0.68, 1.5);
   const chairBack = box(0.85, 0.9, 0.16, material('#17141f'), 3.5, 1.15, 1.82, room, true);
@@ -286,8 +293,9 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
     }
   }
   function pose(targetView = view) {
-    if (targetView === 'profile') return { position: new THREE.Vector3(1.7, 2.15, 1.45), target: new THREE.Vector3(0.7, 1.95, -1.5) };
-    if (targetView === 'secret') return { position: new THREE.Vector3(3.1, 1.65, 0.9), target: devices.secretPosition.clone() };
+    if (targetView === 'profile' || targetView === 'monitor') return { position: new THREE.Vector3(1.7, 2.15, 1.45), target: new THREE.Vector3(0.7, 1.95, -1.5) };
+    if (targetView === 'terminal' || targetView === 'laptop') return { position: new THREE.Vector3(-0.2, 2.08, 1.1), target: devices.laptopLightPosition.clone() };
+    if (targetView === 'mini') return { position: new THREE.Vector3(3.1, 1.65, 0.9), target: devices.secretPosition.clone() };
     return mobile
       ? { position: new THREE.Vector3(3.5, 2.35, 6.6), target: new THREE.Vector3(0.7, canvas.clientHeight < 650 ? 1.2 : 1.8, -2) }
       : { position: new THREE.Vector3(3.5, 2.2, 4.5), target: new THREE.Vector3(0.25, 1.85, -2.15) };
@@ -309,6 +317,8 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
   const projected = new THREE.Vector3();
   const monitorAnchor = new THREE.Vector3(1.1, 2.75, -1.45);
   const secretAnchor = devices.secretPosition.clone();
+  const laptopAnchor = new THREE.Vector3(-1.2, 1.98, -0.97);
+  const miniAnchor = devices.secretPosition.clone().add(new THREE.Vector3(0, 0.3, 0));
   function project(point) {
     projected.copy(point).project(camera);
     return { x: (projected.x * 0.5 + 0.5) * canvas.clientWidth, y: (-projected.y * 0.5 + 0.5) * canvas.clientHeight, visible: projected.z > -1 && projected.z < 1 && Math.abs(projected.x) < 1 && Math.abs(projected.y) < 1 };
@@ -318,7 +328,7 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
     camera.lookAt(lookTarget);
     camera.updateMatrixWorld();
     if (composer) composer.render(); else renderer.render(scene, camera);
-    onProject({ monitor: project(monitorAnchor), secret: project(secretAnchor) });
+    onProject({ monitor: project(monitorAnchor), laptop: project(laptopAnchor), mini: project(miniAnchor), secret: project(secretAnchor) });
     canvas.dataset.rendered = 'true';
   }
   function frame(time) {
@@ -371,6 +381,13 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
     monitorLight.color.set(value ? '#8be9b4' : '#65eee7');
     renderOnce();
   }
+  function setTerminalUnlocked(value) {
+    const previous = devices.laptopScreen.material.map;
+    textures.delete(previous); previous.dispose();
+    const next = screenTexture(true, value);
+    textures.add(next); devices.laptopScreen.material.map = next;
+    renderOnce();
+  }
   function pointerMove(event) {
     pointer.set(event.clientX / canvas.clientWidth * 2 - 1, 1 - event.clientY / canvas.clientHeight * 2);
     if (event.pointerType !== 'mouse') pointer.set(0, 0);
@@ -380,8 +397,9 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
     if (view !== 'room') return;
     const rect = canvas.getBoundingClientRect();
     raycaster.setFromCamera(new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1), camera);
-    const hit = raycaster.intersectObjects(clickable).find(result => result.object.userData.action !== 'secret' || scan);
-    if (hit) onActivate(hit.object.userData.action);
+    const targets = clickable.filter(object => scan ? object.userData.scanAction : object.userData.action);
+    const hit = raycaster.intersectObjects(targets, false)[0];
+    if (hit) onActivate(scan ? hit.object.userData.scanAction : hit.object.userData.action);
   }
   function visibility() { if (document.hidden) { cancelAnimationFrame(frameId); frameId = 0; } else start(); }
   function preferences() { reduced = motionQuery.matches; configureComposer(); resize(); start(); }
@@ -417,5 +435,5 @@ export async function createRoom({ canvas, onProject, onActivate, onFailure }) {
     textures.forEach(t => t.dispose()); resources.forEach(r => r.dispose());
     composer?.passes.forEach(pass => pass.dispose?.()); composer?.dispose(); renderer.dispose();
   }
-  return { focus, setScan, dispose };
+  return { focus, setScan, setTerminalUnlocked, dispose };
 }
