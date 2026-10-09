@@ -47,9 +47,6 @@ body[data-scene="ready"] #world-canvas { opacity: 1; }
 .signal-dot { display: inline-block; width: 5px; height: 5px; background: var(--accent); box-shadow: 0 0 12px #d8f36a50; }
 h1 { font-size: clamp(3.75rem, 6.1vw, 6rem); line-height: 1; font-weight: 300; letter-spacing: -0.055em; margin: 0 0 1.5rem; text-shadow: 0 3px 25px #0510166b; }
 .intro-copy { color: #c8d6dd; font-size: 0.9375rem; line-height: 1.8; margin: 0; letter-spacing: 0.01em; }
-.profile-link { display: inline-flex; align-items: center; gap: 1.6rem; min-height: 44px; margin-top: 1.15rem; font-size: 0.75rem; letter-spacing: 0.03em; text-decoration: none; border-bottom: 1px solid #a99bbb4d; }
-.profile-link span { color: var(--accent); font-size: 1.15rem; }
-.profile-link:hover { color: var(--accent); border-color: var(--accent); }
 .room-hotspots { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
 .hotspot { position: absolute; transform: translate(-10px, -50%); display: flex; align-items: center; gap: 0.85rem; padding: 10px; min-height: 44px; pointer-events: auto; background: #06111bb3; color: var(--paper); border: 1px solid #afd2df55; border-radius: 2px; text-align: left; transition: border-color 0.2s, background 0.2s; }
 .hotspot:hover { border-color: var(--accent); background: #112331ed; }
@@ -69,7 +66,7 @@ h1 { font-size: clamp(3.75rem, 6.1vw, 6rem); line-height: 1; font-weight: 300; l
 body[data-scan="on"] { --accent: #a6f1bd; --cyan: #a6f1bd; }
 body[data-scan="on"] .world-shade { background: linear-gradient(180deg, #020f0b50, transparent 24%, transparent 50%, #020f0dd9); }
 body[data-scan="on"] .room-hint { color: var(--accent); }
-body[data-view="profile"] .introduction, body[data-view="terminal"] .introduction, body[data-view="scan-clue"] .introduction { opacity: 0.2; }
+body[data-view="blog"] .introduction, body[data-view="profile"] .introduction, body[data-view="terminal"] .introduction, body[data-view="scan-clue"] .introduction { opacity: 0.2; }
 .footer { position: absolute; bottom: 0; inset-inline: 3rem; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.5rem 0; border-top: 1px solid #b2a0ce24; color: #b1c4cf; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.5625rem; letter-spacing: 0.07em; }
 .location { display: flex; align-items: center; gap: 0.8rem; }
 .location-cross { font-size: 1rem; color: var(--accent); }
@@ -129,7 +126,6 @@ body[data-view="scan-clue"] h2, body[data-view="terminal"] h2 { font-size: 2.25r
   h1 { font-size: 4rem; margin-bottom: 1rem; }
   .eyebrow { font-size: 0.55rem; }
   .intro-copy { font-size: 0.875rem; }
-  .profile-link { margin-top: 0.7rem; }
   .footer { inset-inline: 1.5rem; padding: 1rem 0; font-size: 0.5rem; }
   .room-hint { display: none; }
   .edition { font-size: 0.45rem; }
@@ -164,12 +160,23 @@ body[data-view="scan-clue"] h2, body[data-view="terminal"] h2 { font-size: 2.25r
   .introduction .eyebrow { display: none; }
   h1 { font-size: 3rem; margin-bottom: 0.5rem; }
   .intro-copy { font-size: 0.75rem; line-height: 1.5; }
-  .profile-link { margin-top: 0.25rem; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 @media (forced-colors: active) {
   .world, .room-hotspots { display: none; }
   body { background: Canvas; color: CanvasText; }
   .introduction, .masthead, .footer { color: CanvasText; }
-  .control, .hotspot, .profile-link, dialog { border: 1px solid ButtonText; }
+  .control, .hotspot, dialog { border: 1px solid ButtonText; }
 }
+
+body[data-view="blog"] dialog { width: min(42rem, calc(100% - 2.5rem)); }
+.blog-hotspot .hotspot-dot { border-color: var(--accent); box-shadow: 0 0 0 4px #d8f36a1a; }
+.blog-posts { margin: 1.8rem 0 0; padding: 0; list-style: none; }
+.blog-post { display: block; padding: 1.5rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); text-decoration: none; }
+.post-meta { display: flex; flex-wrap: wrap; gap: 0.8rem; color: var(--muted); font: 0.65rem/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.post-meta > span { color: var(--cyan); }
+.blog-post h3 { margin: 0.8rem 0; font: 400 clamp(1.6rem, 4vw, 2.1rem)/1.25 Georgia, "Times New Roman", serif; letter-spacing: -0.025em; }
+.dialog-content .blog-post p { margin: 0; font-size: 0.875rem; line-height: 1.7; color: var(--muted); }
+.blog-post:hover h3, .blog-index-link:hover { color: var(--accent); }
+.post-read { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.3rem; color: var(--accent); font-size: 0.75rem; }
+.blog-index-link { display: inline-flex; align-items: center; gap: 1.5rem; min-height: 44px; margin-top: 1rem; color: var(--muted); font-size: 0.75rem; text-decoration: none; }

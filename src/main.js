@@ -10,6 +10,8 @@ const scanButton = document.querySelector('[data-action="scan"]');
 const soundButton = document.querySelector('[data-action="sound"]');
 const aboutButton = document.querySelector('.controls [data-action="profile"]');
 const workstation = document.querySelector('#workstation-hotspot');
+const blogHotspot = document.querySelector('#blog-hotspot');
+const blogContent = document.querySelector('#blog-content');
 const scanNodes = document.querySelector('#scan-nodes');
 const scanHotspots = Array.from(scanNodes.querySelectorAll('[data-scan-node]'));
 const scanContent = document.querySelector('#scan-content');
@@ -38,8 +40,8 @@ function updateSound() {
   soundButton.setAttribute('aria-pressed', String(soundEnabled));
   document.querySelector('#sound-label').textContent = soundEnabled ? 'Sound on' : 'Sound off';
 }
-function placeHotspot(element, point, visible) {
-  element.hidden = !visible || !point?.visible;
+function placeHotspot(element, point, visible, allowOffscreen = false) {
+  element.hidden = !visible || !point || (!point.visible && !allowOffscreen);
   if (element.hidden) return;
   const padding = 18;
   const width = element.offsetWidth;
@@ -54,6 +56,7 @@ function placeHotspot(element, point, visible) {
 function updateHotspots() {
   const visible = body.dataset.scene === 'ready' && view === 'room';
   placeHotspot(workstation, positions?.monitor, visible && !scanning);
+  placeHotspot(blogHotspot, positions?.laptop, visible && !scanning, scanMobileQuery.matches);
   scanNodes.hidden = !visible || !scanning;
   if (scanNodes.hidden) return;
   scanHotspots.forEach(button => {
@@ -82,20 +85,22 @@ function openDetail(next, trigger = aboutButton) {
   const record = nodeId ? scanPuzzle.inspect(nodeId) : null;
   const isScan = Boolean(record);
   const isTerminal = nodeId === 'laptop';
+  const isBlog = next === 'blog';
   returnTarget = trigger;
   view = isScan ? (isTerminal ? 'terminal' : 'scan-clue') : next;
   body.dataset.view = view;
-  document.querySelector('#dialog-title').textContent = isScan ? record.name : 'rovewyn';
-  document.querySelector('#dialog-code').textContent = isScan ? `${record.index} / ${record.name.toUpperCase()}` : '01 / WORKSTATION';
-  document.querySelector('#dialog-eyebrow').textContent = isTerminal ? 'Local session' : isScan ? 'Device record' : 'Profile';
-  document.querySelector('#profile-content').hidden = isScan;
+  document.querySelector('#dialog-title').textContent = isScan ? record.name : isBlog ? 'Blog' : 'rovewyn';
+  document.querySelector('#dialog-code').textContent = isScan ? `${record.index} / ${record.name.toUpperCase()}` : isBlog ? '02 / MACBOOK' : '01 / WORKSTATION';
+  document.querySelector('#dialog-eyebrow').textContent = isTerminal ? 'Local session' : isScan ? 'Device record' : isBlog ? 'rovewyn / Writing' : 'Profile';
+  document.querySelector('#profile-content').hidden = isScan || isBlog;
+  blogContent.hidden = !isBlog;
   scanContent.hidden = !isScan;
   updateScanProgress();
-  room?.focus(isScan ? nodeId : view);
+  room?.focus(isScan ? nodeId : isBlog ? 'laptop' : view);
   updateHotspots();
   if (!dialog.open) dialog.showModal();
   if (isTerminal && !scanPuzzle.isUnlocked()) document.querySelector('#terminal-username').focus();
-  status.textContent = isScan ? `${record.name} record recovered. ${scanPuzzle.progressText()}.` : 'Workstation opened.';
+  status.textContent = isScan ? `${record.name} record recovered. ${scanPuzzle.progressText()}.` : isBlog ? 'Blog posts opened on the MacBook.' : 'Workstation opened.';
 }
 function closeDetail() {
   view = 'room'; body.dataset.view = view;
@@ -104,7 +109,7 @@ function closeDetail() {
   status.textContent = 'Returned to room.';
 }
 async function act(action, trigger) {
-  if (action === 'profile' || action.startsWith('inspect-')) openDetail(action, trigger);
+  if (action === 'profile' || action === 'blog' || action.startsWith('inspect-')) openDetail(action, trigger);
   if (action === 'return') closeDetail();
   if (action === 'scan' && room) {
     scanning = !scanning;
@@ -139,7 +144,7 @@ function fallback() {
   hint.textContent = '';
   updateHotspots();
   if (view === 'terminal' || view === 'scan-clue') closeDetail();
-  status.textContent = 'The 3D room is unavailable. The introduction and GitHub link are still available.';
+  status.textContent = 'The 3D room is unavailable. The introduction is still available.';
 }
 async function initialize() {
   if (matchMedia('(forced-colors: active)').matches) { fallback(); return; }
@@ -149,7 +154,7 @@ async function initialize() {
     const initializedRoom = await createRoom({
       canvas,
       onProject: value => { positions = value; updateHotspots(); },
-      onActivate: action => act(action, scanHotspots.find(button => button.dataset.action === action) || workstation),
+      onActivate: action => act(action, action === 'blog' ? blogHotspot : scanHotspots.find(button => button.dataset.action === action) || workstation),
       onFailure: fallback,
     });
     if (!active) { initializedRoom.dispose(); return; }
@@ -158,7 +163,7 @@ async function initialize() {
     scanButton.disabled = false;
     soundButton.disabled = typeof AudioContext === 'undefined';
     updateHotspots();
-    if (view !== 'room') room.focus(view);
+    if (view !== 'room') room.focus(view === 'blog' ? 'laptop' : view);
   } catch (error) {
     console.warn('The room could not initialize.', error);
     fallback();

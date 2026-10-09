@@ -99,6 +99,7 @@ export function createDeskDevices({ material, screenTexture, makeTexture, textur
     device.traverse(object => {
       if (!object.isMesh) return;
       object.userData.scanAction = action;
+      if (device === laptop) object.userData.action = 'blog';
       scanTargets.push(object);
     });
   }

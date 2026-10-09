@@ -39,10 +39,10 @@
       <p class="eyebrow"><span class="signal-dot" aria-hidden="true"></span>WORKSPACE / 001</p>
       <h1>rovewyn</h1>
       <p class="intro-copy">Curious by nature.<br>Building useful things with code.</p>
-      <a class="profile-link" href="https://github.com/rovewyn" rel="noreferrer" aria-label="Find me on GitHub">GitHub <span aria-hidden="true">↗</span></a>
     </main>
     <div class="room-hotspots" aria-label="Explore the room">
-      <button id="workstation-hotspot" class="hotspot" type="button" data-action="profile" hidden><span class="hotspot-dot" aria-hidden="true"></span><span class="hotspot-caption"><span class="hotspot-index">01 / WORKSTATION</span><span>Open profile <span aria-hidden="true">↗</span></span></span></button>
+      <button id="workstation-hotspot" class="hotspot" type="button" data-action="profile" aria-label="Profile" hidden><span class="hotspot-dot" aria-hidden="true"></span><span class="hotspot-caption"><span class="hotspot-index">01 / WORKSTATION</span><span>Profile <span aria-hidden="true">↗</span></span></span></button>
+      <button id="blog-hotspot" class="hotspot blog-hotspot" type="button" data-action="blog" aria-label="Blog" hidden><span class="hotspot-dot" aria-hidden="true"></span><span class="hotspot-caption"><span class="hotspot-index">02 / MACBOOK</span><span>Blog <span aria-hidden="true">↗</span></span></span></button>
       <div id="scan-nodes" class="scan-nodes" role="group" aria-label="Scan devices" hidden>
         <p id="scan-progress" class="scan-progress">NODE RECORDS · 0/3</p>
         <button class="hotspot scan-hotspot" type="button" data-action="inspect-monitor" data-scan-node="monitor" aria-label="Inspect monitor"><span class="scan-node-index" aria-hidden="true">01</span><span class="scan-node-name">Monitor</span><span class="scan-node-state">Unread</span></button>
@@ -63,6 +63,20 @@
         <p class="eyebrow" id="dialog-eyebrow">Profile</p>
         <h2 id="dialog-title">rovewyn</h2>
         <div id="profile-content"><p>Curious by nature.<br>Building useful things with code.</p><a class="dialog-link" href="https://github.com/rovewyn" rel="noreferrer">GitHub <span>@rovewyn ↗</span></a></div>
+        <div id="blog-content" hidden>
+          <p class="blog-intro">Notes from things I build and test.</p>
+          <ol class="blog-posts" aria-label="Blog posts">
+            <li>
+              <a class="blog-post" href="/blog/2026/10/09/substrate-browser/" target="_blank" rel="noopener noreferrer">
+                <span class="post-meta"><time datetime="2026-10-09">9 October 2026</time><span>Experiment</span></span>
+                <h3>A browser that wakes up where it left off.</h3>
+                <p>Page state, suspend and resume times, and resource use in a Substrate browser Actor.</p>
+                <span class="post-read">Read post <span aria-hidden="true">↗</span></span>
+              </a>
+            </li>
+          </ol>
+          <a class="blog-index-link" href="/blog/">All posts <span aria-hidden="true">→</span></a>
+        </div>
         <div id="scan-content" hidden>
           <p class="scan-session">SESSION / <span id="scan-session-date"></span></p>
           <p id="scan-record-progress" class="scan-record-progress">NODE RECORDS · 0/3</p>

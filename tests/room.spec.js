@@ -13,9 +13,8 @@ test('profile and scan are usable', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-10-09T23:59:59Z'));
   await ready(page);
   await expect(page.getByRole('heading', { name: 'rovewyn', level: 1 })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Find me on GitHub' })).toHaveAttribute('href', 'https://github.com/rovewyn');
 
-  const profile = page.getByRole('button', { name: /Open profile/ });
+  const profile = page.getByRole('button', { name: 'Profile', exact: true });
   await profile.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -104,9 +103,8 @@ test('sound starts muted and can be toggled', async ({ page }) => {
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('the introduction and GitHub link remain available', async ({ page }) => {
+  test('the introduction remains available', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'rovewyn', level: 1 })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Find me on GitHub' })).toHaveAttribute('href', 'https://github.com/rovewyn');
   });
 });
