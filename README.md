@@ -13,7 +13,7 @@ Curious by nature. Building useful things with code.
 - Ground streets with moving cars and vans, two trains, elevated road traffic, and six air corridors add activity. Air taxis, passenger shuttles, cargo lifters, and courier drones have distinct silhouettes and speeds. The background image contains only night sky and clouds; every visible building and vehicle is procedural 3D geometry.
 - Select **Open profile**, the main monitor, or **About** to open the introduction.
 - Enable **Scan** and inspect the three desk devices. The monitor captures eight encoded fragments, the Mac mini records the encoder's calibration, and the MacBook holds a locked login screen. Combine their route records to restore fragment order, decode the daily password, and unlock the MacBook. Its **Recovered records** panel keeps inspected clues available.
-- Enable **Sound off** to hear procedural rain, equipment hum, and distant trains. Every visit starts muted.
+- Select **Sound off** to hear soft stereo rain with scattered droplets. Sound fades in and out; every visit starts muted.
 - Close a panel with **Return to room** or Escape. Keyboard and touch controls provide the same actions.
 
 The room uses original procedural geometry, canvas textures, an original generated sky image, and Web Audio synthesis. All runtime assets are served from this site. It has no third-party model, font, image, or audio downloads, backend, analytics, or account requirement.
