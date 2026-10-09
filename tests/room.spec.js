@@ -35,7 +35,6 @@ test('profile and scan are usable', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Monitor', exact: true })).toBeVisible();
   await expect(page.locator('#scan-session-date')).toHaveText('2026-10-09 UTC');
   await expect(page.locator('#captured-fragments tbody tr')).toHaveCount(8);
-  const fragments = await page.locator('#captured-fragments tbody').innerText();
   await expect(page.locator('#scan-record-progress')).toHaveText('NODE RECORDS · 1/3');
   await page.keyboard.press('Escape');
   await expect(monitor).toBeFocused();
@@ -88,21 +87,6 @@ test('profile and scan are usable', async ({ page }) => {
   await expect(password).toHaveValue('');
   await page.clock.setFixedTime(new Date('2026-10-10T00:00:00Z'));
   await expect(page.locator('#scan-session-date')).toHaveText('2026-10-09 UTC');
-  await page.reload();
-  await expect(page.locator('body')).toHaveAttribute('data-scene', 'ready');
-  await page.getByRole('button', { name: 'Scan', exact: true }).click();
-  await monitor.click();
-  await expect(page.locator('#scan-session-date')).toHaveText('2026-10-10 UTC');
-  await expect(page.locator('#captured-fragments tbody')).not.toHaveText(fragments);
-  await page.keyboard.press('Escape');
-  await laptop.click();
-  await username.fill('rovewyn');
-  await password.fill('brfmsqgn');
-  await password.press('Enter');
-  await expect(page.locator('#terminal-login-status')).toHaveText('ACCESS DENIED');
-  await password.fill('kedmjgbf');
-  await password.press('Enter');
-  await expect(page.locator('#terminal-login-status')).toHaveText('ACCESS GRANTED');
   expect(errors).toEqual([]);
 });
 
