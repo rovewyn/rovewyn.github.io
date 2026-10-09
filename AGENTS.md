@@ -68,6 +68,17 @@ Keep the preview server running until any condition is met:
 
 Local verification alone does not end the preview session.
 
+## Git Workflow & Cleanup
+
+Use `codex/` feature branches during development. After merging a PR, remove both its local and remote feature branches:
+
+1. Confirm the PR is merged and neither branch contains new or unmerged work; delete the remote feature branch.
+2. Run `git fetch --prune origin`.
+3. Switch away from the local feature branch. Primary clones may use `git switch main`, then `git merge --ff-only origin/main`; linked worktrees must use `git switch --detach origin/main`.
+4. Delete the local feature branch after switching away, then verify that both feature branches are gone.
+
+These checkout requirements apply to post-merge cleanup. Preserve uncommitted changes and branches used by other worktrees. For squash merges, verify that all branch changes are present in `origin/main` before forcing local branch deletion.
+
 ## Commit & Pull Request Guidelines
 
 Use Conventional Commits for commit messages and pull request titles. Keep commits focused. Pull requests should explain the change and purpose, summarize the local preview result, and link an issue when applicable.

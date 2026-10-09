@@ -44,7 +44,12 @@
     </main>
     <div class="room-hotspots" aria-label="Explore the room">
       <button id="workstation-hotspot" class="hotspot" type="button" data-action="profile" hidden><span class="hotspot-dot" aria-hidden="true"></span><span class="hotspot-caption"><span class="hotspot-index">01 / WORKSTATION</span><span>Open profile <span aria-hidden="true">↗</span></span></span></button>
-      <button id="secret-hotspot" class="hotspot secret-hotspot" type="button" data-action="secret" hidden><span class="hotspot-dot" aria-hidden="true"></span><span class="hotspot-caption"><span class="hotspot-index">UNKNOWN SIGNAL</span><span>Trace the connection <span aria-hidden="true">↗</span></span></span></button>
+      <div id="scan-nodes" class="scan-nodes" role="group" aria-label="Scan devices" hidden>
+        <p id="scan-progress" class="scan-progress">NODE RECORDS · 0/3</p>
+        <button class="hotspot scan-hotspot" type="button" data-action="inspect-monitor" data-scan-node="monitor" aria-label="Inspect monitor"><span class="scan-node-index" aria-hidden="true">01</span><span class="scan-node-name">Monitor</span><span class="scan-node-state">Unread</span></button>
+        <button class="hotspot scan-hotspot" type="button" data-action="inspect-laptop" data-scan-node="laptop" aria-label="Inspect MacBook"><span class="scan-node-index" aria-hidden="true">02</span><span class="scan-node-name">MacBook</span><span class="scan-node-state">Unread</span></button>
+        <button class="hotspot scan-hotspot" type="button" data-action="inspect-mini" data-scan-node="mini" aria-label="Inspect Mac mini"><span class="scan-node-index" aria-hidden="true">03</span><span class="scan-node-name">Mac mini</span><span class="scan-node-state">Unread</span></button>
+      </div>
     </div>
     <footer class="footer">
       <span class="location" aria-hidden="true"><span class="location-cross">+</span></span>
@@ -59,7 +64,47 @@
         <p class="eyebrow" id="dialog-eyebrow">Profile</p>
         <h2 id="dialog-title">rovewyn</h2>
         <div id="profile-content"><p>Curious by nature.<br>Building useful things with code.</p><a class="dialog-link" href="https://github.com/rovewyn" rel="noreferrer">GitHub <span>@rovewyn ↗</span></a></div>
-        <div id="secret-content" hidden><div class="secret-mark" aria-hidden="true">[ rw ]</div><p>There is always another layer.</p><p class="secret-note">Connection established.</p></div>
+        <div id="scan-content" hidden>
+          <p class="scan-session">SESSION / <span id="scan-session-date"></span></p>
+          <p id="scan-record-progress" class="scan-record-progress">NODE RECORDS · 0/3</p>
+          <section data-scan-panel="monitor" data-scan-name="Monitor" data-scan-index="01" hidden>
+            <p>The eight fragments are in the wrong order. Find the correct order. Then change each code to a letter.</p>
+            <table id="captured-fragments" class="scan-table"><caption>Fragment codes</caption><thead><tr><th scope="col">Fragment</th><th scope="col">Code</th></tr></thead><tbody></tbody></table>
+            <h3>Order clues</h3>
+            <ol class="route-records"></ol>
+          </section>
+          <section data-scan-panel="laptop" data-scan-name="MacBook" data-scan-index="02" hidden>
+            <h3>Order clues</h3>
+            <ol class="route-records"></ol>
+            <form id="terminal-login" class="terminal-login" autocomplete="off">
+              <label for="terminal-username">Username</label>
+              <input id="terminal-username" name="username" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+              <label for="terminal-password">Password</label>
+              <input id="terminal-password" name="password" type="password" autocomplete="off" required>
+              <button class="terminal-button" type="submit">Log in</button>
+            </form>
+            <p id="terminal-login-status" class="terminal-status" role="status" aria-live="polite">SESSION LOCKED</p>
+            <div id="terminal-reward" hidden>
+              <div class="secret-mark" aria-hidden="true">[ rw ]</div>
+              <h3>RECOVERED LOG / 001</h3>
+              <p>Someone left this session locked.<br>You followed the signal all the way through.<br>Curiosity made the connection.</p>
+            </div>
+            <button id="terminal-retry" class="terminal-button" type="button" hidden>Log out</button>
+            <details class="terminal-records"><summary>Recovered records</summary><div id="terminal-records-content"></div></details>
+          </section>
+          <section data-scan-panel="mini" data-scan-name="Mac mini" data-scan-index="03" hidden>
+            <h3>Code rule</h3>
+            <div id="encoder-protocol">
+              <p>The encoder uses 16 positions, from 0 to 15. The direction is forward (+1) or backward (−1). The offset is a fixed number from 0 to 15.</p>
+              <p class="encoder-formula">code = direction × position + offset<br>If the result is below 0, add 16. If the result is above 15, subtract 16. Repeat until the result is from 0 to 15.</p>
+            </div>
+            <ol id="decoder-ring" class="decoder-ring" aria-label="Letter positions"></ol>
+            <table id="calibration-records" class="scan-table"><caption>Known letter codes</caption><thead><tr><th scope="col">Letter</th><th scope="col">Code</th></tr></thead><tbody></tbody></table>
+            <h3>Order clues</h3>
+            <ol class="route-records"></ol>
+          </section>
+          <p id="scan-record-help" class="scan-record-help"></p>
+        </div>
       </div>
       <button class="return-button" type="button" data-action="return"><span aria-hidden="true">←</span> Return to room</button>
     </dialog>

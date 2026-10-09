@@ -37,7 +37,6 @@ export function createDeskDevices({ material, screenTexture, makeTexture, textur
   const jack = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.01, 24), black);
   jack.rotation.x = Math.PI / 2; jack.position.set(-0.15, -0.012, 0.218); mini.add(jack);
   const secretNode = rounded(0.028, 0.014, 0.01, 0.004, black, 0.166, -0.012, 0.223, mini);
-  secretNode.userData.action = 'secret';
   const secretPosition = new THREE.Vector3(2.466, 1.198, -0.787);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.066, 0.005, 8, 40), green);
   ring.position.copy(secretPosition); ring.position.z += 0.015; ring.visible = false; group.add(ring);
@@ -95,5 +94,14 @@ export function createDeskDevices({ material, screenTexture, makeTexture, textur
   const wheelAxle = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.03, 16), spaceGray);
   wheelAxle.rotation.z = Math.PI / 2; wheelAxle.position.copy(wheel.position); mouse.add(wheelAxle);
 
-  return { group, scanMeshes, secretNode, ring, secretPosition, laptopLightPosition: new THREE.Vector3(-1.2, 1.56, -0.97) };
+  const scanTargets = [];
+  for (const [device, action] of [[laptop, 'inspect-laptop'], [mini, 'inspect-mini']]) {
+    device.traverse(object => {
+      if (!object.isMesh) return;
+      object.userData.scanAction = action;
+      scanTargets.push(object);
+    });
+  }
+
+  return { group, scanMeshes, scanTargets, secretNode, ring, secretPosition, laptopScreen, laptopLightPosition: new THREE.Vector3(-1.2, 1.56, -0.97) };
 }
