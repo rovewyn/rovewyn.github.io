@@ -12,11 +12,13 @@ Curious by nature. Building useful things with code.
 - A procedural skyline with 65 buildings in five depth rows and 2,982 window instances. Windows use ordinary warm-white and pale-yellow light. Three framed neon signs use fictional glyphs with no language or meaning mapping.
 - Ground streets with moving cars and vans, two trains, elevated road traffic, and six air corridors add activity. Air taxis, passenger shuttles, cargo lifters, and courier drones have distinct silhouettes and speeds. The background image contains only night sky and clouds; every visible building and vehicle is procedural 3D geometry.
 - Select **Open profile**, the main monitor, or **About** to open the introduction.
-- Enable **Scan**, then trace the unknown signal to find the hidden node.
+- Enable **Scan** and inspect the three desk devices. The monitor captures eight encoded fragments, the Mac mini records the encoder's calibration, and the MacBook holds a locked login screen. Combine their route records to restore fragment order, decode the daily password, and unlock the MacBook. Its **Recovered records** panel keeps inspected clues available.
 - Enable **Sound off** to hear procedural rain, equipment hum, and distant trains. Every visit starts muted.
 - Close a panel with **Return to room** or Escape. Keyboard and touch controls provide the same actions.
 
 The room uses original procedural geometry, canvas textures, an original generated sky image, and Web Audio synthesis. All runtime assets are served from this site. It has no third-party model, font, image, or audio downloads, backend, analytics, or account requirement.
+
+The puzzle is a local simulated session. A date-seeded generator produces the same fragments, records, and password for everyone on the same UTC date. Records and login state survive panel changes and Scan toggles within a visit. Reloading clears progress and uses the current UTC date; an open session keeps its original date across midnight.
 
 The sky image's exact prompt, disclosed tool parameters, source output, compression command, metadata, and checksums are recorded in [assets/night-sky.prompt.md](assets/night-sky.prompt.md). The sky is mapped onto a world-space dome, shared by the same camera as the buildings. Static fallback uses the same sky image. Scene composition, palette, traffic, devices, and lighting are documented in [assets/world.scene.md](assets/world.scene.md).
 
@@ -56,6 +58,7 @@ Reduced motion stops ambient animation and camera parallax. Hidden pages pause r
 
 - `index.html` and `styles.css`: semantic content, responsive interface, dialogs, and fallback theme.
 - `src/main.js`: shared interaction state and accessible controls.
+- `src/scan-puzzle.js`: UTC daily puzzle generation, recovered device records, and the simulated MacBook login.
 - `src/scene.js`: room construction, camera, picking, scan, rendering, and resource cleanup.
 - `src/city.js`: near and middle-distance buildings, elevated routes, and animated traffic.
 - `src/neon-signs.js`: sign housings, brackets, luminous borders, and fictional glyph textures.
