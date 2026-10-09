@@ -4,36 +4,63 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#05050c">
     <meta name="description" content="Curious by nature. Building useful things with code.">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'; script-src 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
     <meta property="og:type" content="website">
     <meta property="og:title" content="rovewyn">
     <meta property="og:description" content="Curious by nature. Building useful things with code.">
     <title>rovewyn</title>
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/src/main.js"></script>
   </head>
-  <body>
-    <div class="page">
-      <header class="masthead" aria-label="rovewyn">
-        <img class="monogram" src="./favicon.svg" alt="" width="44" height="44">
-        <span class="handle">rovewyn</span>
-      </header>
-
-      <main class="intro">
-        <h1>rovewyn</h1>
-        <div class="introduction">
-          <span class="accent" aria-hidden="true"></span>
-          <p>Curious by nature. Building useful things with code.</p>
-          <a class="profile-link" href="https://github.com/rovewyn" rel="noreferrer">GitHub <span class="profile-handle">@rovewyn</span></a>
-        </div>
-      </main>
-
-      <footer class="footer">
-        <span>rovewyn</span>
-        <span class="footer-mark" aria-hidden="true"></span>
-      </footer>
+  <body data-scene="loading" data-scan="off" data-sound="off" data-view="room">
+    <a class="skip-link" href="#introduction">Skip to introduction</a>
+    <div class="world" aria-hidden="true">
+      <canvas id="world-canvas"></canvas>
+      <div class="world-fallback"></div>
+      <div class="world-shade"></div>
+      <div class="world-grain"></div>
     </div>
+    <header class="masthead">
+      <a class="brand" href="/" aria-label="rovewyn home">
+        <img src="/favicon.svg" width="32" height="32" alt="">
+        <span>rovewyn</span>
+      </a>
+      <nav class="controls" aria-label="Room controls">
+        <button class="control" type="button" data-action="profile">About</button>
+        <button class="control scan-control" type="button" data-action="scan" aria-pressed="false" disabled><span class="scan-icon" aria-hidden="true"></span><span>Scan</span></button>
+        <button class="control sound-control" type="button" data-action="sound" aria-pressed="false" disabled><span class="sound-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="sound-label">Sound off</span></button>
+      </nav>
+    </header>
+    <main id="introduction" class="introduction">
+      <p class="eyebrow"><span class="signal-dot" aria-hidden="true"></span>WORKSPACE / 001</p>
+      <h1>rovewyn</h1>
+      <p class="intro-copy">Curious by nature.<br>Building useful things with code.</p>
+      <a class="profile-link" href="https://github.com/rovewyn" rel="noreferrer" aria-label="Find me on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+    </main>
+    <div class="room-hotspots" aria-label="Explore the room">
+      <button id="workstation-hotspot" class="hotspot" type="button" data-action="profile" hidden><span class="hotspot-dot" aria-hidden="true"></span><span class="hotspot-caption"><span class="hotspot-index">01 / WORKSTATION</span><span>Open profile <span aria-hidden="true">↗</span></span></span></button>
+      <button id="secret-hotspot" class="hotspot secret-hotspot" type="button" data-action="secret" hidden><span class="hotspot-dot" aria-hidden="true"></span><span class="hotspot-caption"><span class="hotspot-index">UNKNOWN SIGNAL</span><span>Trace the connection <span aria-hidden="true">↗</span></span></span></button>
+    </div>
+    <footer class="footer">
+      <span class="location" aria-hidden="true"><span class="location-cross">+</span></span>
+      <span class="room-hint" id="room-hint"></span>
+      <span class="edition">TERMINAL <span>/ 001</span></span>
+    </footer>
+    <p id="live-status" class="sr-only" role="status" aria-live="polite"></p>
+    <p id="fallback-status" class="fallback-status" hidden>The interactive scene is unavailable. Profile and GitHub remain accessible.</p>
+    <dialog id="detail-dialog" aria-labelledby="dialog-title">
+      <div class="dialog-topline"><span id="dialog-code">01 / WORKSTATION</span><button class="close-button" type="button" data-action="return" aria-label="Return to room">×</button></div>
+      <div class="dialog-content">
+        <p class="eyebrow" id="dialog-eyebrow">Profile</p>
+        <h2 id="dialog-title">rovewyn</h2>
+        <div id="profile-content"><p>Curious by nature.<br>Building useful things with code.</p><a class="dialog-link" href="https://github.com/rovewyn" rel="noreferrer">GitHub <span>@rovewyn ↗</span></a></div>
+        <div id="secret-content" hidden><div class="secret-mark" aria-hidden="true">[ rw ]</div><p>There is always another layer.</p><p class="secret-note">Connection established.</p></div>
+      </div>
+      <button class="return-button" type="button" data-action="return"><span aria-hidden="true">←</span> Return to room</button>
+    </dialog>
   </body>
 </html>
