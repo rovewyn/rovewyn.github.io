@@ -20,6 +20,10 @@ The room uses original procedural geometry, canvas textures, an original generat
 
 The sky image's exact prompt, disclosed tool parameters, source output, compression command, metadata, and checksums are recorded in [assets/night-sky.prompt.md](assets/night-sky.prompt.md). The sky is mapped onto a world-space dome, shared by the same camera as the buildings. Static fallback uses the same sky image. Scene composition, palette, traffic, devices, and lighting are documented in [assets/world.scene.md](assets/world.scene.md).
 
+## Writing
+
+The article at `/writing/substrate-browser/` records the local browser Actor experiment. It contains a labeled state replay and an interactive view of curated numeric samples. Original logs, profiles, session values, and screenshots remain local. Its source is in `writing/substrate-browser/`; Vite builds it as a separate HTML entry.
+
 ## Local Development
 
 Requires Node.js 24 and npm. Install the locked dependencies, then start Vite:

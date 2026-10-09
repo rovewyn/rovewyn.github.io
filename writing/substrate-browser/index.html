@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#080e15">
+    <meta name="description" content="A local ARM64 experiment with Substrate, headless Chromium, and Playwright MCP: preserving a live page across SuspendActor and ResumeActor.">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="A browser that wakes up where it left off — rovewyn">
+    <meta property="og:description" content="What survived, what it cost, and what a ten-cycle laptop experiment cannot tell us.">
+    <title>A browser that wakes up where it left off — rovewyn</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./article.css">
+    <script type="module" src="./article.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#article">Skip to article</a>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="rovewyn home"><img src="/favicon.svg" width="30" height="30" alt=""><span>rovewyn</span></a>
+      <a class="code-link" href="https://github.com/rovewyn/substrate-browser-lab/tree/a19d53a8a3e159d89d70b206b19362f65a2c5b59" rel="noreferrer">Experiment scripts <span aria-hidden="true">↗</span></a>
+    </header>
+    <main id="article">
+      <div class="hero">
+        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span>FIELD NOTES / EXPERIMENT 01</p>
+        <h1>A browser that wakes up<br> <em>where it left off.</em></h1>
+        <p class="dek">Can a headless browser go to sleep, lose its Worker, and return to the same running document? I put Chromium and Playwright MCP inside a Substrate Actor to find out.</p>
+        <div class="byline"><span>By rovewyn</span><span aria-hidden="true">·</span><time datetime="2026-10-09">9 October 2026</time><span class="note-tag">Local ARM64 experiment</span></div>
+        <p class="hero-result"><span>OBSERVED</span>The web pages kept their state after the original Worker was deleted.</p>
+        <div class="hero-metrics" aria-label="Selected observations from ten sequential cycles">
+          <div><span class="metric-number">10<span class="number-unit">/10</span></span><span class="metric-label">cycles with matching page state</span></div>
+          <div><span class="metric-number">0.878<span class="number-unit">s</span></span><span class="metric-label">median SuspendActor time</span></div>
+          <div><span class="metric-number">1.439<span class="number-unit">s</span></span><span class="metric-label">median time from ResumeActor to state read</span></div>
+          <div><span class="metric-number">326<span class="number-unit">MiB</span></span><span class="metric-label">median Actor memory after ResumeActor</span></div>
+        </div>
+        <p class="hero-caption">One primary Actor. Two simple pages. The test used existing local caches. This test did not measure capacity.</p>
+      </div>
+
+
+      <div class="article-layout">
+        <nav class="contents" aria-label="Article contents">
+          <a href="#page-state">01 / Page state</a>
+          <a href="#latency">02 / Latency</a>
+          <a href="#resources">03 / Resources</a>
+          <a href="#runtime">04 / Runtime</a>
+          <a href="#capacity-tests">05 / Capacity tests</a>
+          <a href="#methods-and-data">Methods and data <span aria-hidden="true">↘</span></a>
+        </nav>
+        <article class="prose">
+          <section id="page-state" data-story-section>
+            <div class="section-heading"><p class="section-index">01 / BROWSER PAGE STATE</p><h2>Page state</h2><p class="section-lead">I opened two web pages in one Actor and recorded their state. I ran SuspendActor, then deleted the original Worker Pod. I ran ResumeActor and read both pages on the replacement Worker. Their values matched the values recorded before suspension. The next click increased the primary counter from 43 to 44.</p></div>
+            <figure class="proof-viewer visual-panel" aria-labelledby="proof-heading" data-selected-stage="3">
+              <div class="figure-heading"><div><span class="diagram-kicker">RECORDED WORKER REPLACEMENT</span><h3 id="proof-heading">Same web page. Different Worker.</h3></div></div>
+              <div class="step-controls" role="group" aria-label="Recorded lifecycle stage">
+                <button type="button" data-stage="0" aria-pressed="false"><span>01</span>Running</button>
+                <button type="button" data-stage="1" aria-pressed="false"><span>02</span>SuspendActor</button>
+                <button type="button" data-stage="2" aria-pressed="false"><span>03</span>Delete Worker</button>
+                <button type="button" data-stage="3" aria-pressed="true"><span>04</span>ResumeActor</button>
+                <button type="button" data-stage="4" aria-pressed="false"><span>05</span>Click again</button>
+              </div>
+              <noscript><p>Enable JavaScript to change stages or inspect samples. The plotted values and summary remain visible.</p></noscript>
+              <div class="worker-flow" aria-label="Actor lifecycle">
+                <div class="flow-node worker-original"><span class="diagram-kicker">WORKER A</span><strong id="worker-a-state">Pod deleted</strong></div>
+                <span class="flow-connector" aria-hidden="true">→</span>
+                <div class="flow-node snapshot-node"><span class="diagram-kicker">MEMORY SNAPSHOT</span><strong id="snapshot-state">Used for resume</strong></div>
+                <span class="flow-connector" aria-hidden="true">→</span>
+                <div class="flow-node worker-replacement"><span class="diagram-kicker">WORKER B</span><strong id="worker-b-state">Actor resumed</strong></div>
+              </div>
+              <div class="document-comparison">
+                <div class="document-panel before-panel">
+                  <div class="proof-topline"><span class="diagram-kicker">BEFORE SUSPENSION</span><span class="panel-tag">Reference state</span></div>
+                  <div class="counter-pair"><div><span class="big-counter">43</span><span class="counter-label">primary counter</span></div><div><span class="small-counter">7</span><span class="counter-label">second tab</span></div></div>
+                  <dl class="proof-fields"><div><dt>Page start time</dt><dd>1791534639740.1</dd></div><div><dt>Random ID in page memory</dt><dd>page-A</dd></div><div><dt>Unsaved text</dt><dd>Unsaved draft proof-A</dd></div><div><dt>Added page element</dt><dd>proof-A</dd></div></dl>
+                </div>
+                <div class="document-panel current-panel">
+                  <div class="proof-topline"><span class="diagram-kicker" id="proof-status">RESUMED / WORKER B</span><span class="panel-tag" id="proof-state-badge">State matched</span></div>
+                  <div class="counter-pair"><div><span class="big-counter" id="proof-counter">43</span><span class="counter-label">primary counter</span></div><div><span class="small-counter">7</span><span class="counter-label">second tab</span></div></div>
+                  <dl class="proof-fields"><div><dt>Page start time</dt><dd>1791534639740.1</dd></div><div><dt>Random ID in page memory</dt><dd>page-A</dd></div><div><dt>Unsaved text</dt><dd>Unsaved draft proof-A</dd></div><div><dt>Added page element</dt><dd>proof-A</dd></div></dl>
+                </div>
+              </div>
+              <dl class="proof-key" aria-label="Page value definitions">
+                <div>
+                  <dt>Page start time</dt>
+                  <dd>Time when the browser started loading this page. Unit: milliseconds since 1 January 1970. Reloading the page gives it a new value.</dd>
+                </div>
+                <div>
+                  <dt>Random ID in page memory</dt>
+                  <dd>A random ID created on page load and kept in JavaScript memory. <code>page-A</code> is the report label.</dd>
+                </div>
+                <div>
+                  <dt>Unsaved text</dt>
+                  <dd>Text entered in the input field without saving.</dd>
+                </div>
+                <div>
+                  <dt>Added page element</dt>
+                  <dd>An HTML element added after page load. <code>proof-A</code> labels its text.</dd>
+                </div>
+              </dl>
+            </figure>
+            <figure class="cycle-check" aria-labelledby="cycles-heading">
+              <div class="cycle-intro"><span class="diagram-kicker">SEPARATE SEQUENTIAL TEST</span><h3 id="cycles-heading">10 / 10 state checks passed.</h3><p>Primary counter: <strong>100 → 110</strong></p></div>
+              <ol class="cycle-strip" aria-label="Primary counter after each successful cycle"><li><span>01</span><strong>101</strong></li><li><span>02</span><strong>102</strong></li><li><span>03</span><strong>103</strong></li><li><span>04</span><strong>104</strong></li><li><span>05</span><strong>105</strong></li><li><span>06</span><strong>106</strong></li><li><span>07</span><strong>107</strong></li><li><span>08</span><strong>108</strong></li><li><span>09</span><strong>109</strong></li><li><span>10</span><strong>110</strong></li></ol>
+              <figcaption>I kept both web pages open in the same Actor and set the primary counter to 100. In each cycle, I recorded their values, ran SuspendActor, then ran ResumeActor. After ResumeActor, I read both pages and compared their values with the recorded values. I clicked the counter button once after each successful check. I completed ten cycles, one after another.</figcaption>
+            </figure>
+          </section>
+
+          <section id="latency" data-story-section>
+            <div class="section-heading"><p class="section-index">02 / PAUSE AND RESUME DELAY</p><h2>Latency</h2><p class="section-lead">The median SuspendActor time was 0.878 s. The median time from ResumeActor to the first state read was 1.439 s.</p></div>
+            <div class="latency-grid">
+              <figure class="metric-plot visual-panel" data-metric="suspendSeconds" aria-labelledby="suspend-heading">
+                <div class="figure-heading"><div><span class="diagram-kicker">PAUSE / N = 10</span><h3 id="suspend-heading">SuspendActor time</h3></div><span class="figure-badge">Includes upload</span></div>
+                <div class="plot-stats"><div><span>Median</span><strong class="plot-median">0.878 <small>s</small></strong></div><div><span>Maximum · p95</span><strong class="plot-max">0.935 <small>s</small></strong></div></div>
+                <svg class="dot-chart" viewBox="0 0 500 310" role="img" aria-label="Ten SuspendActor samples. Median 0.878 seconds. Maximum 0.935 seconds."><title>SuspendActor time: ten sequential samples</title><line x1="42" x2="488" y1="260.000" y2="260.000" class="chart-grid"/><text x="33" y="264.000" text-anchor="end" class="chart-axis-label">0</text><line x1="42" x2="488" y1="202.500" y2="202.500" class="chart-grid"/><text x="33" y="206.500" text-anchor="end" class="chart-axis-label">0.5</text><line x1="42" x2="488" y1="145.000" y2="145.000" class="chart-grid"/><text x="33" y="149.000" text-anchor="end" class="chart-axis-label">1</text><line x1="42" x2="488" y1="87.500" y2="87.500" class="chart-grid"/><text x="33" y="91.500" text-anchor="end" class="chart-axis-label">1.5</text><line x1="42" x2="488" y1="30.000" y2="30.000" class="chart-grid"/><text x="33" y="34.000" text-anchor="end" class="chart-axis-label">2</text><text x="42" y="15" class="chart-axis-label">s</text><line x1="42" x2="488" y1="159.068" y2="159.068" class="chart-median"/><circle cx="42.000" cy="162.335" r="5" class="chart-point"><title>Cycle 1: 0.849 s</title></circle><text x="42.000" y="283" text-anchor="middle" class="chart-axis-label">1</text><circle cx="91.556" cy="154.852" r="5" class="chart-point"><title>Cycle 2: 0.914 s</title></circle><text x="91.556" y="283" text-anchor="middle" class="chart-axis-label">2</text><circle cx="141.111" cy="161.290" r="5" class="chart-point"><title>Cycle 3: 0.858 s</title></circle><text x="141.111" y="283" text-anchor="middle" class="chart-axis-label">3</text><circle cx="190.667" cy="159.505" r="5" class="chart-point"><title>Cycle 4: 0.874 s</title></circle><text x="190.667" y="283" text-anchor="middle" class="chart-axis-label">4</text><circle cx="240.222" cy="157.020" r="5" class="chart-point"><title>Cycle 5: 0.895 s</title></circle><text x="240.222" y="283" text-anchor="middle" class="chart-axis-label">5</text><circle cx="289.778" cy="158.816" r="5" class="chart-point"><title>Cycle 6: 0.880 s</title></circle><text x="289.778" y="283" text-anchor="middle" class="chart-axis-label">6</text><circle cx="339.333" cy="158.047" r="5" class="chart-point"><title>Cycle 7: 0.887 s</title></circle><text x="339.333" y="283" text-anchor="middle" class="chart-axis-label">7</text><circle cx="388.889" cy="152.490" r="5" class="chart-point"><title>Cycle 8: 0.935 s</title></circle><text x="388.889" y="283" text-anchor="middle" class="chart-axis-label">8</text><circle cx="438.444" cy="161.854" r="5" class="chart-point"><title>Cycle 9: 0.853 s</title></circle><text x="438.444" y="283" text-anchor="middle" class="chart-axis-label">9</text><circle cx="488.000" cy="159.319" r="5" class="chart-point"><title>Cycle 10: 0.875 s</title></circle><text x="488.000" y="283" text-anchor="middle" class="chart-axis-label">10</text><text x="265" y="305" text-anchor="middle" class="chart-axis-label">Sequential cycle</text></svg>
+                <div class="sample-buttons" role="group" aria-label="Inspect a SuspendActor sample"></div><p class="sample-detail" aria-live="polite">Select a sample. Dashed line: median.</p>
+                <figcaption>Timing starts before the SuspendActor command. It ends when the command completes. It includes snapshot upload.</figcaption>
+              </figure>
+              <figure class="metric-plot visual-panel" data-metric="resumeToFirstToolSeconds" aria-labelledby="resume-heading">
+                <div class="figure-heading"><div><span class="diagram-kicker">RESUME / N = 10</span><h3 id="resume-heading">ResumeActor to state read</h3></div><span class="figure-badge">Both existing tabs</span></div>
+                <div class="plot-stats"><div><span>Median</span><strong class="plot-median">1.439 <small>s</small></strong></div><div><span>Maximum · p95</span><strong class="plot-max">1.557 <small>s</small></strong></div></div>
+                <svg class="dot-chart" viewBox="0 0 500 310" role="img" aria-label="Ten resume-to-state-read samples. Median 1.439 seconds. Maximum 1.557 seconds."><title>ResumeActor to state read: ten sequential samples</title><line x1="42" x2="488" y1="260.000" y2="260.000" class="chart-grid"/><text x="33" y="264.000" text-anchor="end" class="chart-axis-label">0</text><line x1="42" x2="488" y1="202.500" y2="202.500" class="chart-grid"/><text x="33" y="206.500" text-anchor="end" class="chart-axis-label">0.5</text><line x1="42" x2="488" y1="145.000" y2="145.000" class="chart-grid"/><text x="33" y="149.000" text-anchor="end" class="chart-axis-label">1</text><line x1="42" x2="488" y1="87.500" y2="87.500" class="chart-grid"/><text x="33" y="91.500" text-anchor="end" class="chart-axis-label">1.5</text><line x1="42" x2="488" y1="30.000" y2="30.000" class="chart-grid"/><text x="33" y="34.000" text-anchor="end" class="chart-axis-label">2</text><text x="42" y="15" class="chart-axis-label">s</text><line x1="42" x2="488" y1="94.505" y2="94.505" class="chart-median"/><circle cx="42.000" cy="102.093" r="5" class="chart-point"><title>Cycle 1: 1.373 s</title></circle><text x="42.000" y="283" text-anchor="middle" class="chart-axis-label">1</text><circle cx="91.556" cy="82.694" r="5" class="chart-point"><title>Cycle 2: 1.542 s</title></circle><text x="91.556" y="283" text-anchor="middle" class="chart-axis-label">2</text><circle cx="141.111" cy="92.330" r="5" class="chart-point"><title>Cycle 3: 1.458 s</title></circle><text x="141.111" y="283" text-anchor="middle" class="chart-axis-label">3</text><circle cx="190.667" cy="92.777" r="5" class="chart-point"><title>Cycle 4: 1.454 s</title></circle><text x="190.667" y="283" text-anchor="middle" class="chart-axis-label">4</text><circle cx="240.222" cy="80.931" r="5" class="chart-point"><title>Cycle 5: 1.557 s</title></circle><text x="240.222" y="283" text-anchor="middle" class="chart-axis-label">5</text><circle cx="289.778" cy="101.282" r="5" class="chart-point"><title>Cycle 6: 1.380 s</title></circle><text x="289.778" y="283" text-anchor="middle" class="chart-axis-label">6</text><circle cx="339.333" cy="90.550" r="5" class="chart-point"><title>Cycle 7: 1.473 s</title></circle><text x="339.333" y="283" text-anchor="middle" class="chart-axis-label">7</text><circle cx="388.889" cy="96.232" r="5" class="chart-point"><title>Cycle 8: 1.424 s</title></circle><text x="388.889" y="283" text-anchor="middle" class="chart-axis-label">8</text><circle cx="438.444" cy="99.734" r="5" class="chart-point"><title>Cycle 9: 1.394 s</title></circle><text x="438.444" y="283" text-anchor="middle" class="chart-axis-label">9</text><circle cx="488.000" cy="96.936" r="5" class="chart-point"><title>Cycle 10: 1.418 s</title></circle><text x="488.000" y="283" text-anchor="middle" class="chart-axis-label">10</text><text x="265" y="305" text-anchor="middle" class="chart-axis-label">Sequential cycle</text></svg>
+                <div class="sample-buttons" role="group" aria-label="Inspect a resume-to-state-read sample"></div><p class="sample-detail" aria-live="polite">Select a sample. Dashed line: median.</p>
+                <figcaption>Timing starts before the ResumeActor command. It ends after the first successful read of both existing pages.</figcaption>
+              </figure>
+            </div>
+            <p class="boundary-note"><span class="note-marker">n = 10</span>The cycles ran in sequence and used existing local caches. For ten samples, nearest-rank p95 equals the maximum. The test did not measure production latency.</p>
+          </section>
+
+          <section id="resources" data-story-section>
+            <div class="section-heading"><p class="section-index">03 / TWO RESOURCE BUDGETS</p><h2>Resources</h2><p class="section-lead">A running Actor uses memory. A stored snapshot uses disk space. Measure these resources separately.</p></div>
+            <figure class="resource-figure visual-panel" aria-labelledby="resources-heading">
+              <div class="figure-heading"><div><span class="diagram-kicker">MEDIANS / TEN LIFECYCLE CYCLES</span><h3 id="resources-heading">Running state and stored state.</h3></div><span class="figure-badge">Different resources</span></div>
+              <div class="resource-row"><div class="resource-label"><span class="diagram-kicker">ACTOR MEMORY</span><strong>326.1 <small>MiB</small></strong><span>Measured after ResumeActor</span></div><div class="resource-bar"><div class="bar-track"><span class="memory-fill"></span></div><div class="bar-scale"><span>0</span><span>175</span><span>350 MiB</span></div></div></div>
+              <div class="resource-row"><div class="resource-label"><span class="diagram-kicker">SNAPSHOT DISK ALLOCATION</span><strong>42.8 <small>MiB</small></strong><span>Stored data and allocation metadata</span></div><div class="resource-bar"><div class="bar-track"><span class="disk-fill"></span></div><div class="bar-scale"><span>0</span><span>175</span><span>350 MiB</span></div></div></div>
+              <div class="suspended-check"><div><span class="diagram-kicker">SEPARATE CHECK AFTER SUSPENSION</span><h4>Previous Actor cgroup</h4></div><dl><div><dt>Processes</dt><dd>0</dd></div><div><dt>Anonymous / shared / file memory</dt><dd>0</dd></div><div><dt>Kernel metadata</dt><dd>4 KiB</dd></div></dl></div>
+              <div class="shared-services"><span class="diagram-kicker">STILL USE RESOURCES</span><span>Worker Pods</span><span>Control plane</span><span>PostgreSQL</span><span>RustFS</span></div>
+              <figcaption>Memory and disk are separate budgets. These values do not give a cluster savings rate. The test did not measure peak memory during SuspendActor or ResumeActor.</figcaption>
+            </figure>
+          </section>
+
+          <section id="runtime" data-story-section>
+            <div class="section-heading"><p class="section-index">04 / VERIFIED RUNTIME COMBINATION</p><h2>Runtime</h2></div>
+            <figure class="runtime-record visual-panel" aria-label="Recorded outcomes before and after the browser runtime update">
+              <div class="runtime-grid"><div class="runtime-card"><span class="diagram-kicker">EARLIER ATTEMPTS</span><strong class="outcome failed">Chromium unusable</strong><ul><li>Node and MCP resumed.</li><li>Browser interaction failed.</li></ul></div><span class="runtime-arrow" aria-hidden="true">→</span><div class="runtime-card"><span class="diagram-kicker">GVISOR RELEASE-20261005.0 / SYSTRAP</span><strong class="outcome passed">Browser test passed</strong><ul><li>Existing page state matched.</li><li>The next click succeeded.</li></ul></div></div>
+              <figcaption>The runtime update is consistent with the documented ARM64 PAC issue. The exact failure cause was not isolated.</figcaption>
+            </figure>
+          </section>
+
+          <section id="capacity-tests" data-story-section>
+            <div class="section-heading"><p class="section-index">05 / NEXT EXPERIMENT</p><h2>Capacity tests</h2><p class="section-lead">Capacity is not yet measured. Two configured active slots are an admission limit. They do not measure laptop capacity.</p></div>
+            <div class="next-grid"><div><span>01</span><h3>Active density</h3><p>Actors, CPU use, memory use, and failures.</p></div><div><span>02</span><h3>Sustained tasks</h3><p>Submitted tasks, completed tasks, and latency.</p></div><div><span>03</span><h3>Concurrent lifecycle</h3><p>Simultaneous suspend/resume, peak memory, and storage I/O.</p></div><div><span>04</span><h3>Idle gaps and bursts</h3><p>Idle resource use, simultaneous resumes, and overload recovery.</p></div></div>
+          </section>
+
+          <section id="methods-and-data" data-story-section class="methods-section">
+            <h2>Methods and data</h2>
+            <details class="method-record"><summary><span>Show the full record</span><span class="summary-hint">Versions, measurements, and operations</span></summary><div class="method-content">
+              <section id="record-terms"><h3>Terms used in this report</h3><div class="table-wrap"><table><caption>Project terms and measurement names</caption><tbody>
+                <tr><th scope="row">Actor</th><td>A durable execution instance managed by Substrate.</td></tr>
+                <tr><th scope="row">Worker</th><td>A service that hosts an Actor while the Actor runs.</td></tr>
+                <tr><th scope="row">Kind node</th><td>A Kubernetes node that Kind runs inside a Docker container.</td></tr>
+                <tr><th scope="row">SuspendActor</th><td>The Substrate operation that suspends an Actor and stores a snapshot.</td></tr>
+                <tr><th scope="row">ResumeActor</th><td>The Substrate operation that resumes an Actor on an available Worker.</td></tr>
+                <tr><th scope="row">Page state</th><td>The recorded counter values, page start time, random ID in page memory, unsaved text, and added page element.</td></tr>
+                <tr><th scope="row">CLI</th><td>Command-line interface.</td></tr>
+                <tr><th scope="row">cgroup</th><td>A Linux resource accounting group. Actor memory includes memory charged to this group.</td></tr>
+                <tr><th scope="row">browser_snapshot</th><td>A Playwright MCP tool that reads the page accessibility tree. It does not create an Actor snapshot.</td></tr>
+                <tr><th scope="row">Median</th><td>For ten samples, the mean of the fifth and sixth values after sorting.</td></tr>
+                <tr><th scope="row">p95</th><td>The 95th percentile, calculated with the nearest-rank method. For ten samples, it equals the maximum.</td></tr>
+              </tbody></table></div></section>
+
+<section id="record-question">
+
+            <h3>Motivation</h3>
+            <p>A browser agent waits for model responses, human decisions, and new tasks. Chromium continues to use memory during these waits. Closing Chromium releases its execution memory. Reopening the URL does not restore unsaved text, JavaScript objects, or the original page state.</p>
+            <p>I tested whether <a href="https://github.com/agent-substrate/substrate/tree/288694ef2297bb5d6fab30eca328ddaa89015f91" rel="noreferrer">Substrate</a> could preserve this state. Substrate uses <strong>Actors</strong> as durable execution instances. A <strong>Worker</strong> hosts an Actor while it runs. Substrate can suspend an Actor and resume it on an available Worker. A snapshot stores Actor state for later restoration.</p>
+            <p>This experiment used gVisor to capture process state. PostgreSQL stored control state. RustFS stored snapshots.</p>
+            <p>The page retained its memory objects, unsaved text, added page element, and page start time after Worker replacement. I clicked the page again. The counter continued from its previous value. These observations support recovery of the existing web pages in this runtime and workload.</p>
+            <div class="callout"><p><strong>Observed behavior:</strong> suspension stored the browser's execution state in a snapshot. ResumeActor restored that state after a delay. The supporting services continued to use resources. The next experiment must measure the total cost under agent traffic.</p></div>
+          </section>
+<section id="record-setup">
+
+            <h3>Configuration</h3>
+            <p>I built an ARM64 image with Node, headless Chromium, Playwright MCP, and a local HTTP page inside the Actor. An external client used Model Context Protocol (MCP) tools to control the browser. I tested navigation, text input, clicks, JavaScript, screenshots, and tabs. Scripts controlled the workload. The test did not require a model API key. Chromium produced screenshots in headless mode.</p>
+            <figure class="architecture">
+              <div class="architecture-flow">
+                <div><span class="diagram-kicker">HOST</span><strong>MCP client</strong><small>Tools and observations</small></div>
+                <span class="flow-arrow" aria-hidden="true">→</span>
+                <div><span class="diagram-kicker">LOOPBACK</span><strong>Gateway + router</strong><small>Route to the Actor</small></div>
+                <span class="flow-arrow" aria-hidden="true">→</span>
+                <div class="actor-node"><span class="diagram-kicker">GVISOR WORKER</span><strong>Browser Actor</strong><small>Playwright MCP → Chromium</small></div>
+              </div>
+              <div class="storage-flow"><span>SuspendActor</span><span aria-hidden="true">↔</span><strong>Snapshot storage + control state</strong><span aria-hidden="true">↔</span><span>ResumeActor</span></div>
+              <figcaption>Each Actor used one shared browser context. Clients connected to the same Actor shared its tabs. The setup did not isolate browser state between those clients.</figcaption>
+            </figure>
+            <div class="table-wrap"><table>
+              <caption>Configuration used for the recorded run</caption>
+              <tbody>
+                <tr><th scope="row">Host and cluster</th><td>M1 Max; Docker Desktop with 10 CPUs and 24 GiB; one ARM64 Kind node</td></tr>
+                <tr><th scope="row">Substrate</th><td><code>288694ef</code>, upstream source unchanged; Kubernetes 1.37.0</td></tr>
+                <tr><th scope="row">Browser runtime</th><td>gVisor <code>release-20261005.0</code>, systrap; separate browser runtime configuration</td></tr>
+                <tr><th scope="row">Browser stack</th><td>Node 24.19.0; Playwright MCP 0.0.83; Playwright 1.64.0-alpha-1790635538000; Chromium 155.0.8059.12</td></tr>
+                <tr><th scope="row">Browser pool</th><td>Two Workers; each with a 4 GiB memory request/limit and a 2 CPU limit</td></tr>
+                <tr><th scope="row">Actor limit</th><td>2 CPUs and 2 GiB memory</td></tr>
+                <tr><th scope="row">Image and storage</th><td>1.743 GiB uncompressed browser image, shared across Actors; PostgreSQL and RustFS in Kind</td></tr>
+              </tbody>
+            </table></div>
+            <p>The external navigation test allowed only <code>example.com</code>. It used HTTP and TLS passthrough with certificate verification enabled. A standard <code>@modelcontextprotocol/sdk@1.32.1</code> client discovered 25 tools. The client read the existing page through the loopback gateway. A chunked HTTP initialization request also succeeded. I did not test all 25 tools.</p>
+          </section>
+<section id="record-proof">
+
+            <h3>Page state</h3>
+            <p>A page can reload and still look the same. Cookies can also survive a reload. A screenshot or cookie alone cannot show that a web page kept its state.</p>
+            <p>I created a random proof object in JavaScript memory. I entered text without saving it. I added an HTML element to the page after page load. I also recorded <code>performance.timeOrigin</code> and a counter stored only in memory.</p>
+            <p>After SuspendActor, I did a check of the recorded snapshot fidelity. It was <code>SNAPSHOT_FIDELITY_MEMORY</code>. I verified that the original Worker served no other Actor. Then I deleted its Pod.</p>
+            <p>I waited for the replacement Worker to become ready and register with Substrate. After ResumeActor, I reused the original MCP session to read the existing pages. During this comparison, I did not navigate or insert replacement state.</p>
+            <p>In the <a href="https://github.com/agent-substrate/substrate/blob/288694ef2297bb5d6fab30eca328ddaa89015f91/pkg/proto/ateapipb/ateapi.proto" rel="noreferrer">Substrate API definition</a>, preferred snapshot fidelity sets an upper limit. Substrate can save less state, including when the host has insufficient resources. A successful ResumeActor call does not confirm memory continuity. This check required a memory snapshot and matching page state held in memory.</p>
+
+
+
+            <div class="table-wrap"><table>
+              <caption>Observed before and after Worker replacement</caption>
+              <thead><tr><th scope="col">Signal</th><th scope="col">Before</th><th scope="col">After ResumeActor</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Primary page start time</th><td><code>1791534639740.1</code></td><td>Exact same value</td></tr>
+                <tr><th scope="row">Random ID in page memory and proof object</th><td>Present in memory</td><td>Exact same values</td></tr>
+                <tr><th scope="row">Unsaved text and added page element</th><td>Created after page load</td><td>Exact same values</td></tr>
+                <tr><th scope="row">Counters in two tabs</th><td>43 and 7</td><td>43 and 7</td></tr>
+                <tr><th scope="row">Next primary-tab click</th><td>Not yet executed</td><td>Counter advanced to 44</td></tr>
+                <tr><th scope="row">MCP session</th><td>Already initialized</td><td>Still accepted</td></tr>
+              </tbody>
+            </table></div>
+            <p>Both Worker Pods ran on the same Kind node. The test confirmed that the web pages kept their state after Worker replacement on that node. It did not test migration between machines or CPU models. It also did not test recovery of arbitrary external network connections.</p>
+          </section>
+<section id="record-measurements">
+
+            <h3>Latency</h3>
+            <p>The lifecycle test used one primary Actor with two simple local tabs. Each cycle suspended the Actor, resumed it, read both pages, and clicked once. All ten state comparisons passed. The primary counter increased from 100 to 110.</p>
+            <p>I collected separate Chromium launch samples with temporary Actors. These Actors started from a template snapshot that had no running browser. The primary Actor remained present during the launch tests.</p>
+            <div class="callout compact"><p><strong>Timing boundaries:</strong> browser launch timing starts at navigation, after Actor resume and MCP initialization. Resume-to-state-read timing includes the ResumeActor CLI call and the first successful read of both existing tabs. The measurements cover different operations. They cannot establish a general speed improvement.</p></div>
+
+            <figure class="sample-explorer interactive" aria-labelledby="samples-heading">
+              <div class="figure-heading"><div><span class="diagram-kicker">MEASURED SAMPLES / N = 10</span><h4 id="samples-heading">Inspect the distribution.</h4></div></div>
+              <label class="metric-select-label" for="metric-select">Measurement</label>
+              <select id="metric-select">
+                <option value="resumeToFirstToolSeconds">ResumeActor to state read</option>
+                <option value="suspendSeconds">SuspendActor time</option>
+                <option value="resumeControlSeconds">ResumeActor command time</option>
+                <option value="browserLaunchSeconds">Chromium startup and first page load</option>
+                <option value="warmSnapshotToolSeconds">browser_snapshot tool time</option>
+                <option value="runningMemoryBytes">Actor memory after ResumeActor</option>
+                <option value="snapshotDiskBytes">Snapshot disk allocation</option>
+              </select>
+              <div class="chart-stats" aria-live="polite"><div><span>Median</span><strong id="chart-median">1.439 s</strong></div><div><span>Nearest-rank p95</span><strong id="chart-p95">1.557 s</strong></div><div><span>Range</span><strong id="chart-range">1.373–1.557 s</strong></div></div>
+              <svg id="sample-chart" viewBox="0 0 680 240" role="img" aria-label="Ten sequential resume-to-state-read samples. A table below provides numeric summaries."><title>Sequential samples</title></svg>
+              <div id="sample-buttons" class="sample-buttons" role="group" aria-label="Inspect an individual sample"></div>
+              <p id="sample-detail" class="sample-detail" aria-live="polite">Choose a sample to inspect its value.</p>
+              <figcaption id="metric-definition">Timing starts before the ResumeActor command. It ends after the first successful read of both existing pages. Sample numbers show collection order.</figcaption>
+              <noscript><p>Enable JavaScript to use the chart. The static summary table below remains readable without JavaScript.</p></noscript>
+            </figure>
+
+            <div class="table-wrap"><table class="summary-table">
+              <caption>Ten samples per metric; displayed values are rounded</caption>
+              <thead><tr><th scope="col">Measurement</th><th scope="col">Median</th><th scope="col">p95</th><th scope="col">Range</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Chromium startup and first page load</th><td>1.411 s</td><td>1.476 s</td><td>1.374–1.476 s</td></tr>
+                <tr><th scope="row"><code>browser_snapshot</code> tool time</th><td>18.620 ms</td><td>22.047 ms</td><td>15.882–22.047 ms</td></tr>
+                <tr><th scope="row">SuspendActor time</th><td>0.878 s</td><td>0.935 s</td><td>0.849–0.935 s</td></tr>
+                <tr><th scope="row">ResumeActor command time</th><td>0.879 s</td><td>1.005 s</td><td>0.808–1.005 s</td></tr>
+                <tr><th scope="row">ResumeActor to state read</th><td>1.439 s</td><td>1.557 s</td><td>1.373–1.557 s</td></tr>
+                <tr><th scope="row">Actor memory after ResumeActor</th><td>326.127 MiB</td><td>328.098 MiB</td><td>323.871–328.098 MiB</td></tr>
+                <tr><th scope="row">Snapshot disk allocation</th><td>42.807 MiB</td><td>42.980 MiB</td><td>42.598–42.980 MiB</td></tr>
+              </tbody>
+            </table></div>
+            <p>For ten samples, nearest-rank p95 is the tenth value after sorting. This value is also the maximum. This run cannot estimate production tail latency or error rate. Images and runtime data were already in local caches. Launch timing excluded image download and template preparation.</p>
+            <p>A separate measurement started at a new Actor's ResumeActor call. It included MCP initialization and the first loaded page. Its median was 1.859 s.</p>
+            <details class="samples-details"><summary>View all ten lifecycle samples</summary><div class="table-wrap"><table>
+              <caption>Seconds for timing; MiB for memory and disk allocation</caption>
+              <thead><tr><th scope="col">Cycle</th><th scope="col">Suspend</th><th scope="col">Resume control</th><th scope="col">Resume → read</th><th scope="col">Memory</th><th scope="col">Snapshot</th></tr></thead>
+              <tbody id="lifecycle-samples"></tbody>
+            </table></div><noscript><p>Enable JavaScript to read the per-cycle table. The summary above is static HTML.</p></noscript></details>
+            <p>I also stopped and started the full playground. Three tabs and the original MCP session survived, including the external page. Cluster startup took 94.2 s. This time included readiness checks and replacement of Workers with stale addresses. It measures cluster startup rather than browser resume. The measured Actor cgroups recorded no out-of-memory (OOM) event or OOM kill.</p>
+          </section>
+<section id="record-memory">
+
+            <h3>Resources</h3>
+
+            <p>The two values measure different resources. A cgroup is a Linux resource accounting group. Its memory value includes gVisor, guest processes, caches, and kernel structures charged to the Actor. I sampled the 326 MiB value after resume. I did not measure peak memory during suspension or restoration.</p>
+            <p>Substrate compresses the state stored for restoration. The shared browser image remains available to the Workers. Each snapshot does not include another copy of its 1.743 GiB uncompressed image. To measure snapshot disk allocation, I multiplied <code>du -sk</code> output by 1024. This value includes filesystem metadata as well as stored data.</p>
+            <p><a href="https://gvisor.dev/docs/user_guide/checkpoint_restore/" rel="noreferrer">gVisor's checkpoint documentation</a> describes compression and options that omit committed memory pages filled with zeros. A sparse file can represent empty ranges without allocating disk blocks for them. Thus, logical file size, disk allocation, compressed data size, and resident memory can differ. This experiment did not measure each mechanism separately. It also did not measure how much runtime overhead the snapshot excluded.</p>
+            <p>After a later suspension, the previous Actor cgroup contained no processes. It recorded zero anonymous, shared, and file memory. It retained 4 KiB of kernel metadata. Worker Pods, the control plane, the database, and snapshot storage still used resources. A separate active/idle test must measure savings for the whole cluster.</p>
+            <p>I also tested a Go counter whose state existed only in memory. After Worker replacement, the counter retained its value of 42 and the same process identity. The next request increased it to 43.</p>
+            <p>Actor memory was 67.23 MiB. The compressed memory-page object was 4.19 MiB. Snapshot disk allocation was 4.31 MiB. Snapshot size therefore cannot replace a measurement of memory used while the Actor runs.</p>
+          </section>
+<section id="record-runtime">
+
+            <h3>Runtime</h3>
+            <p>In earlier attempts, Node and MCP resumed, but Chromium was unusable after restoration. I retained these failures in the operation record. I excluded them from the successful samples. A later attempt stopped before the replacement Worker completed registration. Worker readiness and registration with Substrate are separate conditions.</p>
+            <p>The official <a href="https://github.com/google/gvisor/issues/13542" rel="noreferrer">ARM64 PAC checkpoint/restore issue</a> reports a problem with pointer authentication keys. On systrap, these keys do not survive restore. The merged <a href="https://github.com/google/gvisor/pull/15230" rel="noreferrer">temporary mitigation</a> disables PAC on systrap. I deployed a separate browser runtime configuration with the official <a href="https://github.com/google/gvisor/releases/tag/release-20261005.0" rel="noreferrer">release-20261005.0</a> binaries. The workload then passed.</p>
+            <p>This result is consistent with the documented issue. I did not isolate the instruction that caused my browser failure. The result applies to the fixed Chromium version, gVisor release, and simple pages used here. Other OCI images and browser workloads require separate tests.</p>
+          </section>
+<section id="record-repeat">
+
+            <h3>Operation record</h3>
+            <ol class="operation-list">
+              <li>I configured Docker Desktop. I created a separate Kind playground with one node, a local registry, and a project kubeconfig. I deployed Substrate core services, Counter, and Sandbox from the fixed upstream commit.</li>
+              <li>I did a check of Counter memory and file continuity. I did a check of Sandbox file persistence. I deleted the original Worker of the Go process with memory-only state. I resumed that process and compared its state.</li>
+              <li>I built the browser image. I deployed two browser Workers and an ActorTemplate with a memory snapshot. I tested navigation, input, clicks, JavaScript, screenshots, and two tabs.</li>
+              <li>I recorded the failed restoration attempts. I read the official ARM64 runtime issue. I updated the browser runtime configuration.</li>
+              <li>I created page state held in memory. I invoked SuspendActor. I deleted the original Worker after verification that it served no other Actor. I invoked ResumeActor. I compared the existing page state without navigation.</li>
+              <li>I collected ten separate browser launch samples and ten sequential SuspendActor/ResumeActor cycles. I tested external HTTPS and a standard MCP SDK client. I stopped and started the full playground.</li>
+            </ol>
+            <p>The <a href="https://github.com/rovewyn/substrate-browser-lab/tree/a19d53a8a3e159d89d70b206b19362f65a2c5b59" rel="noreferrer">experiment repository at <code>a19d53a</code></a> contains the image recipe, manifests, dependency lockfiles, and scripts. The commands below use the current script locations and Substrate operation names:</p>
+            <pre><code># From a prepared substrate-browser-lab checkout
+./experiments/browser/browser.sh verify
+./experiments/browser/browser.sh suspend-resume
+./experiments/browser/browser.sh benchmark --iterations 10
+python3 experiments/browser/scripts/restart-check.py</code></pre>
+            <p>The first command resets the shared browser context. Later commands can delete a Worker Pod or restart the Kind node owned by this experiment. The original Worker replacement command was named <code>checkpoint</code>. During repository import, I renamed it <code>suspend-resume</code>. I have not rerun the scripts from their new locations against the live cluster.</p>
+            <p>Dependency lockfiles fix the npm package versions. Rebuilding Debian packages can produce different image bytes.</p>
+            <p class="data-note"><strong>Data handling.</strong> This article includes selected numeric samples. Synthetic identities use consistent aliases. Raw JSON, original screenshots, sessions, cookies, logs, and profiles remain local. The article omits personal paths and unrelated service identities. The diagram shows recorded test results.</p>
+          </section>
+              <section id="record-capacity"><h3>Capacity test boundary</h3><p>Each browser Actor declares 2 CPUs. Each of the two Workers provides 2 CPUs of capacity. Before the capacity test, define Worker resources, Actor limits, workload complexity, and test duration. Set acceptable latency and error targets. Report laptop measurements separately from estimates for larger deployments.</p></section>
+            </div></details>
+          </section>
+          <footer class="article-footer"><a href="/">← rovewyn</a><a href="https://github.com/rovewyn/substrate-browser-lab" rel="noreferrer">Source and experiment scripts ↗</a><span>FIELD NOTES / 001</span></footer>
+        </article>
+      </div>
+    </main>
+  </body>
+</html>
