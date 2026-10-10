@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b1218">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="How many browsers fit on a laptop?">
+  <meta property="og:description" content="Browser counts, Task rates, suspend and resume times, and idle memory in a local Substrate experiment.">
+  <link rel="canonical" href="https://rovewyn.github.io/blog/2026/10/10/substrate-browser-capacity/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>How many browsers fit on a laptop? — rovewyn</title>
+  <meta name="description" content="Local measurements of browser Actor density, task arrival rates, SuspendActor, ResumeActor, and idle memory.">
+  <link rel="stylesheet" href="./report.css">
+  <script src="./report.js" type="module"></script>
+</head>
+<body>
+  <a class="skip-link" href="#report">Skip to report</a>
+  <header><a href="/" aria-label="rovewyn home">rovewyn</a><span>FIELD NOTES · 10 OCT 2026</span><nav aria-label="Site navigation"><a href="/blog/">Blog</a><a href="https://github.com/rovewyn/substrate-browser-lab">Experiment repository ↗</a></nav></header>
+  <main id="report">
+    <section class="hero">
+      <p class="eyebrow">SUBSTRATE / BROWSER CAPACITY</p>
+      <h1>How many browsers<br> fit on a laptop?</h1>
+      <p class="dek">I increased the number of browser Actors and the task arrival rate. Then I paused the Actors and sent a new task burst.</p>
+      <p class="finding" id="finding">One experiment Worker ran <strong>16 browser Actors</strong>. A 5-minute run at <strong>8 Tasks/s</strong> met the Task time target. SuspendActor and ResumeActor preserved the checked page values in the concurrent and burst runs.</p>
+      <nav aria-label="Report sections"><a href="#task">Task</a><a href="#actor-count">01 / Actor count</a><a href="#arrival-rate">02 / Arrival rate</a><a href="#suspend-and-resume">03 / Suspend and resume</a><a href="#idle-time-and-bursts">04 / Idle time and bursts</a><a href="#method-and-records">Method and records</a></nav>
+    </section>
+
+    <section id="task">
+      <div class="section-heading"><p class="eyebrow">TASK DEFINITION</p><h2>One Task</h2><p>One Task uses one Actor and makes four MCP tool calls, in this order.</p></div>
+      <figure class="process-diagram task-definition">
+        <div class="process-scroll"><img src="one-task.svg" alt="One Task: open the local web page, enter text, click Save note, then take a PNG screenshot." width="744" height="88"></div>
+        <figcaption>The screenshot uses a 1280 × 720 viewport. After the screenshot tool returns, I check the saved-note result and PNG bytes.</figcaption>
+      </figure>
+    </section>
+
+    <section id="actor-count">
+      <div class="section-heading"><p class="eyebrow">01 / ACTOR COUNT</p><h2>Adding more browsers to one Worker</h2><p>I tested how adding more browser sandboxes changed Task speed, CPU use, and memory use. Each Actor ran one browser sandbox. I tested two sets of limits per Actor: 2 CPU and 2 GiB of memory, or 0.5 CPU and 1 GiB of memory. I increased the Actor count in steps for each setup.</p></div>
+      <p class="note">A Worker is the Kubernetes Pod that runs the Actors. This experiment used one Worker with an 8 CPU limit and a 16 GiB memory limit.</p>
+      <div class="controls" aria-label="Actor resource profile"><button data-profile="default" aria-pressed="false">2 CPU · 2 GiB / Actor</button><button data-profile="compact" aria-pressed="true">0.5 CPU · 1 GiB / Actor</button></div>
+      <div class="controls metric-controls" aria-label="Actor count chart"><button data-density="throughput" aria-pressed="true">Throughput</button><button data-density="latency" aria-pressed="false">Task time</button><button data-density="memory" aria-pressed="false">Memory</button><button data-density="cpu" aria-pressed="false">CPU</button></div>
+      <figure><div class="chart-scroll"><img id="density-chart" alt="Actor count measurements"></div><figcaption id="density-caption"></figcaption></figure>
+      <div class="result-line" id="density-result"></div>
+      <div class="table-scroll"><table><thead><tr><th>Actors</th><th>Tasks / s</th><th>p95 Task time</th><th>Median Worker memory</th><th>Mean Worker CPU</th><th>Failed Tasks</th></tr></thead><tbody id="density-table"></tbody></table></div>
+      <p class="note" id="admission"></p>
+    </section>
+
+    <section id="arrival-rate">
+      <div class="section-heading"><p class="eyebrow">02 / ARRIVAL RATE</p><h2>Task throughput and queues with 16 browsers</h2><p>I kept the number of Actors at 16. Each Actor had a 0.5 CPU limit and a 1 GiB memory limit. I changed how many Tasks I submitted each second.</p></div>
+      <h3>Submit Tasks for 30 seconds.</h3>
+      <ol class="test-steps">
+        <li>I tested 1, 2, 4, 8, and 12 Tasks/s. At each rate, I ran two tests. In each test, I submitted Tasks for 30 seconds.</li>
+        <li>I submitted Tasks at regular intervals. I did not wait for one Task to finish before submitting the next. At 8 Tasks/s, I submitted one Task every 125 milliseconds.</li>
+        <li>I sent Tasks to the 16 Actors in turn. Different Actors could work at the same time, but each Actor ran one Task at a time. If an Actor was busy, its next Task waited in its queue.</li>
+        <li>After 30 seconds, I stopped submitting Tasks and waited for all remaining Tasks to finish.</li>
+      </ol>
+      <p class="note">I measured how many Tasks finished per second, how long they waited in a queue, and their total time. Total Task time includes that wait. To pass, p95 Task time had to be 5 seconds or less, with no failed Tasks. All remaining Tasks also had to finish within 5 seconds after I stopped submitting new ones.</p>
+      <div class="controls" aria-label="Arrival rate chart"><button data-rate="throughput" aria-pressed="true">Throughput</button><button data-rate="latency" aria-pressed="false">Task time</button><button data-rate="queue" aria-pressed="false">Queue time</button><button data-rate="cpu" aria-pressed="false">CPU</button></div>
+      <figure><div class="chart-scroll"><img id="rate-chart" alt="Task arrival rate measurements"></div><figcaption id="rate-caption"></figcaption></figure>
+      <div class="table-scroll"><table><thead><tr><th>Submitted / s</th><th>Completed / s</th><th>p95 Task time</th><th>p95 queue time</th><th>Tasks over 5 s</th><th>Failed Tasks</th></tr></thead><tbody id="rate-table"></tbody></table></div>
+      <div class="result-line" id="rate-result"></div>
+      <h3 class="soak-heading">Hold the rate for five minutes.</h3>
+      <p class="note" id="soak-procedure">I chose 8 Tasks/s because it was the highest tested rate that passed both 30-second tests. I then submitted Tasks at this rate for 5 minutes. I used the same 16 Actors, resource limits, and queues. After 5 minutes, I stopped submitting Tasks, waited for the remaining Tasks to finish, and checked the same pass criteria.</p>
+      <div class="controls" id="soak-controls" aria-label="Sustained run rate"></div>
+      <figure><div class="chart-scroll"><img id="soak-chart" alt="Task time during the five-minute run"></div><figcaption>Each point summarizes the Tasks submitted during one minute. Their times include waiting in the queue, even if they finished after submissions stopped.</figcaption></figure>
+      <p class="note" id="soak-result"></p>
+      <p class="note" id="cpu-budget"></p>
+    </section>
+
+    <section id="suspend-and-resume">
+      <div class="section-heading"><p class="eyebrow">03 / SUSPEND AND RESUME</p><h2>Time to suspend and resume browser Actors</h2></div>
+      <h3>Purpose</h3>
+      <p class="note">This test checks whether several browser sandboxes can pause and resume together while keeping their web pages intact. It also measures how long this takes, how much memory it uses, and how much snapshot data moves through storage.</p>
+      <h3>What I did</h3>
+      <p class="note">I tested groups of 1, 4, 8, and 16 Actors, with one browser in each Actor. Each Actor had a 0.5 CPU limit and a 1 GiB memory limit. At each group size, every Actor first ran one Task to open its page and enter and save text. I then repeated this cycle three times:</p>
+      <ol class="test-steps">
+        <li><strong>Record the page state.</strong> Read each page's start time, random JavaScript memory value, counter, input text, and saved note.</li>
+        <li><strong>Pause the group.</strong> Call SuspendActor for all Actors in parallel. Wait for every call to finish, then measure the space used by their snapshots.</li>
+        <li><strong>Wait 2 seconds.</strong></li>
+        <li><strong>Resume the group.</strong> Call ResumeActor for all Actors in parallel. Read the existing pages through the same MCP sessions and compare their state with the saved records.</li>
+      </ol>
+      <p class="note">The three cycles ran one after another, using the same pages. Suspend time includes creating and saving the snapshot. Resume time includes restoring the Actor and reading its page state.</p>
+      <h3>How to read the charts</h3>
+      <p class="note">The horizontal axis shows the number of Actors in the group. Use the buttons to choose a measurement:</p>
+      <ul class="test-steps">
+        <li><strong>Per Actor:</strong> the median time for one Actor to pause or resume.</li>
+        <li><strong>Whole batch:</strong> the time until the last Actor in the group finishes, shown as the median of the three cycles.</li>
+        <li><strong>Peak memory:</strong> the highest sampled memory use of the Worker and the whole Kubernetes node.</li>
+        <li><strong>Snapshot transfer:</strong> data uploaded to and downloaded from RustFS, the snapshot store, during a cycle.</li>
+        <li><strong>Disk I/O:</strong> data that RustFS actually reads from and writes to disk during a cycle.</li>
+      </ul>
+      <div class="controls" aria-label="Lifecycle chart"><button data-lifecycle="latency" aria-pressed="true">Per Actor</button><button data-lifecycle="batch" aria-pressed="false">Whole batch</button><button data-lifecycle="memory" aria-pressed="false">Peak memory</button><button data-lifecycle="transfer" aria-pressed="false">Snapshot transfer</button><button data-lifecycle="io" aria-pressed="false">Disk I/O</button></div>
+      <figure><div class="chart-scroll"><img id="lifecycle-chart" alt="Concurrent SuspendActor and ResumeActor measurements"></div><figcaption id="lifecycle-caption"></figcaption></figure>
+      <div class="table-scroll"><table><thead><tr><th>Actors</th><th>Median suspend time / Actor</th><th>Median resume → page read / Actor</th><th>Page checks passed</th><th>Median snapshot disk space / Actor</th><th>Peak Worker / node memory</th></tr></thead><tbody id="lifecycle-table"></tbody></table></div>
+      <h3 class="soak-heading">What I found</h3>
+      <div class="result-line" id="lifecycle-result"></div>
+      <p class="note">Substrate's <a href="https://github.com/agent-substrate/substrate#what-is-agent-substrate">README claims resume operations below 500 ms</a>. In my 8-Actor test, the median per-Actor suspend command took 3.32 s, and resuming and reading the page took 3.39 s. The resume command alone took 2.72 s. Removing the page check still leaves a result measured in seconds. The README's 500 ms claim refers to resume operations.</p>
+      <p class="note">I timed the entire kubectl-ate command: process startup, a new port-forward, authentication, the TLS connection, the lifecycle request, and cleanup. The resume-to-page-read timer also included the MCP page check. The <a href="https://github.com/agent-substrate/substrate/blob/main/benchmarking/README.md#sweperf-reported-metrics">official benchmark separates server-side RPC time from client round-trip time</a>, and also reports <a href="https://github.com/agent-substrate/substrate/blob/main/benchmarking/README.md#server-ground-truth">snapshot restore time</a>. I did not measure those parts separately. This setup did not show sub-second end-to-end resume; the measurements do not identify which part accounts for the difference.</p>
+    </section>
+
+    <section id="idle-time-and-bursts">
+      <div class="section-heading"><p class="eyebrow">04 / IDLE TIME AND BURSTS</p><h2>Memory savings and the next Task burst</h2></div>
+      <h3>Purpose</h3>
+      <p class="note">This test measures the memory saved by suspending idle browsers and the delay when work starts again. It also checks whether their pages keep unsaved text and added page elements.</p>
+      <h3>What I did</h3>
+      <p class="note">I used 16 Actors, with one browser in each Actor. Each Actor had a 0.5 CPU limit and a 1 GiB memory limit. I repeated the same steps three times with these Actors:</p>
+      <ol class="test-steps">
+        <li><strong>Prepare the pages.</strong> Each Actor ran one Task. I then added an unsaved draft and a new page element and recorded the page state.</li>
+        <li><strong>Leave the browsers running for 10 seconds.</strong> Submit no new Tasks and measure memory while the browsers are idle.</li>
+        <li><strong>Pause the group.</strong> Call SuspendActor for all 16 Actors in parallel. Wait for every call to finish, then measure snapshot disk space.</li>
+        <li><strong>Keep the group suspended for 20 seconds.</strong> Measure memory during this period.</li>
+        <li><strong>Start the burst timer and resume the group.</strong> Call ResumeActor for all Actors in parallel, then read their existing pages and compare the recorded state.</li>
+        <li><strong>Send the next work.</strong> After all page checks finish, send one Task to each Actor. The 16 Tasks run in parallel. Each Task's timer ends when its screenshot tool returns.</li>
+      </ol>
+      <p class="note">The cycles ran one after another. Burst Task time starts when the group begins resuming. It includes the resume commands, all group page checks, and the Task's four MCP calls.</p>
+      <div class="controls" aria-label="Burst cycle"><button data-burst="1" aria-pressed="true">Cycle 1</button><button data-burst="2" aria-pressed="false">Cycle 2</button><button data-burst="3" aria-pressed="false">Cycle 3</button></div>
+      <figure><div class="chart-scroll"><img id="burst-chart" alt="Memory use while browsers are idle, suspended, and resumed"></div><figcaption>Memory was sampled about once per second. The table compares median samples from the 10-second running period and the 20-second suspended period. Execution memory released uses the blue line; total Worker memory uses the green line.</figcaption></figure>
+      <div class="table-scroll"><table><thead><tr><th>Cycle</th><th>Worker memory: running Actors</th><th>Worker memory: suspended Actors</th><th>Execution memory released</th><th>p95 burst Task time</th><th>Page checks passed</th></tr></thead><tbody id="burst-table"></tbody></table></div>
+      <h3 class="soak-heading">What I found</h3>
+      <div class="result-line" id="burst-result"></div>
+    </section>
+
+    <section id="method-and-records">
+      <div class="section-heading"><p class="eyebrow">METHOD AND RECORDS</p><h2>What I ran.</h2></div>
+      <div class="method-grid">
+        <div><h3>Task records</h3><p>I recorded submission time, the four MCP call times, queue time, and success or failure. Each Task replaced the previous screenshot file.</p><p>Screenshot retrieval and result checks occurred after Task timing. Each Actor waited for these checks before starting its next Task.</p></div>
+        <div><h3>Page values</h3><p>After ResumeActor, I read each existing web page through its MCP session. I compared its start time, a random value in JavaScript memory, counter, input text, and saved note.</p><p>In 04, I also compared an unsaved draft and an added page element.</p></div>
+      </div>
+      <dl class="definitions">
+        <div><dt>Task time</dt><dd>Time from scheduled submission until the screenshot tool returns. Includes queue time and all four MCP calls.</dd></div>
+        <div><dt>Queue time</dt><dd>Time from scheduled submission until the first MCP call starts.</dd></div>
+        <div><dt>Throughput</dt><dd>Successful Tasks divided by the full elapsed time. The green arrival-rate line counts Tasks completed during the two 30-second submission periods.</dd></div>
+        <div><dt>Suspend time</dt><dd>Time from starting SuspendActor until the command finishes. Includes creating and storing the snapshot.</dd></div>
+        <div><dt>Resume → page read</dt><dd>Time from starting ResumeActor until the existing MCP session returns the page values.</dd></div>
+        <div><dt>Burst Task time</dt><dd>Time from starting ResumeActor until that Task's screenshot tool returns. Includes restoring Actors, checking all pages, and the four MCP calls.</dd></div>
+        <div><dt>CPU</dt><dd>Average CPU cores used, calculated from Linux CPU time. A value of 1 means one core was fully used during the measured period.</dd></div>
+        <div><dt>Memory</dt><dd>Worker or node memory, measured with <a href="https://docs.kernel.org/admin-guide/cgroup-v2.html">Linux cgroup counters</a> about once per second. Includes execution memory and file cache.</dd></div>
+        <div><dt>Execution memory</dt><dd>Anonymous memory + shared memory + kernel memory. <a href="https://gvisor.dev/docs/architecture_guide/resources/">gVisor accounts application memory as shared memory.</a></dd></div>
+        <div><dt>File cache</dt><dd>File memory minus shared memory. Linux includes shared memory in its file-memory counter.</dd></div>
+        <div><dt>Snapshot transfer</dt><dd>Bytes uploaded to and downloaded from RustFS, the snapshot store, during a complete suspend and resume cycle. Includes HTTP traffic and object metadata.</dd></div>
+        <div><dt>Snapshot disk space</dt><dd>Disk space allocated to the latest snapshot. I measured allocated blocks with du -sk.</dd></div>
+        <div><dt>Disk I/O</dt><dd>Bytes read from and written to disk during a cycle. Reading cached data does not require another disk read.</dd></div>
+        <div><dt>p95</dt><dd>The 95th percentile of measured times. About 95% of the times are at or below this value.</dd></div>
+        <div><dt>Pass criteria</dt><dd>For Tasks on running Actors: p95 time ≤ 5 seconds and no failures. The 30-second and 5-minute submission tests also had to finish remaining Tasks within 5 seconds after submissions stopped.</dd></div>
+      </dl>
+      <p class="note">The Kubernetes node hosts Workers and shared services. Kind ran this node in a Docker container.</p>
+      <div class="table-scroll"><table><tbody id="environment-table"></tbody></table></div>
+      <p class="note">Each Actor used one simple local page. Image files were already cached. The Tasks used no model API.</p>
+      <details><summary>Run durations, counts, and operation record</summary><div id="run-counts"></div><p>I retained the original browser resources. The experiments used a separate WorkerPool and two Actor templates. The experiment Actors were suspended after the runs. Their snapshots remain local.</p><p id="pilot-note"></p><p><a href="report-data.json" download>Download the report dataset</a> · <a href="operation-record.md">Read the operation record</a></p></details>
+    </section>
+    <footer><span>rovewyn · 10 October 2026</span><a href="/blog/2026/10/09/substrate-browser/">Page-state experiment ↗</a><a href="report-data.json" download>Data ↓</a></footer>
+  </main>
+</body>
+</html>
