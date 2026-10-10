@@ -16,12 +16,24 @@ This repository contains rovewyn's static personal website, built with Vite and 
 - `src/devices.js`: procedural desktop devices and scan-node placement.
 - `src/audio.js`: procedural, user-activated Web Audio ambience.
 - `favicon.svg`: the site icon and personal mark.
+- `blog/**/post.json`: each article's title, date, summary, and category for shared listings.
+- `build/blog.js`: article discovery, publishing validation, and shared HTML list generation.
 - `assets/`: original and delivery images with exact generation prompts and disclosed parameters.
 - `tests/` and `playwright.config.js`: browser acceptance checks.
 - `vite.config.js`: build and development-only CSP handling.
 - `.github/workflows/pages.yml`: checks and prepared Pages deployment.
 
 Dependencies are locked with npm. `dist/`, `node_modules/`, and browser test outputs are generated and ignored.
+
+## Blog Publishing
+
+1. Create `blog/YYYY/MM/DD/slug/` with a lowercase kebab-case slug. Add the article's standalone `index.html` and its local scripts and styles.
+2. Add a sibling `post.json` with four non-empty string fields: `title`, `date`, `summary`, and `category`. Use `YYYY-MM-DD` for `date`; it must be a valid calendar date matching the directory.
+3. Keep both post lists and article build entries automatic. Do not add individual articles to `vite.config.js` or hand-edit the `blog:room-posts` and `blog:archive` template markers. The build stops if an article or its metadata is missing or invalid.
+4. Run `npm run build` and `npm test`. Open the production preview, check the room's list and `/blog/`, then open the new article and check its assets and behavior. Follow the preview lifecycle below.
+5. Commit the article and metadata together, then open a pull request using the commit and PR conventions below. Publishing to Pages remains a separate release step.
+
+Article bodies and their custom scripts and styles remain owned by the article directory. See the Publishing a Post section in `README.md` for a metadata example. `npm run test:publishing` runs the discovery and publishing checks without a browser.
 
 ## Build, Test, and Development Commands
 

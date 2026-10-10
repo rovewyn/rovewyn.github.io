@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
+import { blogPublishing } from './build/blog.js';
+
+const root = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   base: '/',
@@ -9,8 +12,6 @@ export default defineConfig({
       input: {
         room: fileURLToPath(new URL('./index.html', import.meta.url)),
         blog: fileURLToPath(new URL('./blog/index.html', import.meta.url)),
-        substrateBrowser: fileURLToPath(new URL('./blog/2026/10/09/substrate-browser/index.html', import.meta.url)),
-        substrateBrowserCapacity: fileURLToPath(new URL('./blog/2026/10/10/substrate-browser-capacity/index.html', import.meta.url)),
         legacyArticle: fileURLToPath(new URL('./writing/substrate-browser/index.html', import.meta.url)),
       },
       output: {
@@ -24,7 +25,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [{
+  plugins: [blogPublishing(root), {
     name: 'development-csp',
     apply: 'serve',
     transformIndexHtml(html) {
