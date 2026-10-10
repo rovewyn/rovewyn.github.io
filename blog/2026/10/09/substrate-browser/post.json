@@ -1,0 +1,6 @@
+{
+  "title": "A browser that wakes up where it left off.",
+  "date": "2026-10-09",
+  "summary": "Page state, suspend and resume times, and resource use in a Substrate browser Actor.",
+  "category": "Experiment"
+}

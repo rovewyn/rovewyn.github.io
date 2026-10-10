@@ -28,6 +28,25 @@ Select the MacBook or **Blog** in normal room mode to browse posts. Post links u
 
 The article at `/blog/2026/10/09/substrate-browser/` records the local browser Actor experiment. It contains a labeled state replay and an interactive view of curated numeric samples. Original logs, profiles, session values, and screenshots remain local. Its source is in `blog/2026/10/09/substrate-browser/`; Vite builds the index and post as separate HTML entries. The earlier `/writing/substrate-browser/` URL redirects to the new post path and keeps its section hash.
 
+### Publishing a Post
+
+Create `blog/YYYY/MM/DD/slug/index.html` and keep the article's content, styles, and scripts in that directory. Use a lowercase kebab-case slug. Add a sibling `post.json` with the listing information:
+
+```json
+{
+  "title": "An experiment note",
+  "date": "2026-10-11",
+  "summary": "What I built and measured.",
+  "category": "Experiment"
+}
+```
+
+`build/blog.js` discovers every article directory. It uses `post.json` to generate the room's post list and the blog archive, ordered newest first and grouped by year in the archive. The permanent URL comes from the directory. The metadata date must be a valid calendar date matching that directory.
+
+Do not add article entries to `vite.config.js` or edit either listing by hand. A new article is included in the production build automatically. Missing metadata, missing article HTML, and invalid listing fields stop the build. Both listings are generated as HTML in development and production; metadata changes reload the development page. Article HTML, scripts, styles, and public report assets retain their existing behavior.
+
+Run `npm run build` and `npm test`, then check the production preview before opening a pull request. `npm run test:publishing` checks discovery, validation, list generation, and automatic article/asset publication without launching a browser.
+
 ## Local Development
 
 Requires Node.js 24 and npm. Install the locked dependencies, then start Vite:
@@ -74,6 +93,8 @@ Reduced motion stops ambient animation and camera parallax. Hidden pages pause r
 - `src/devices.js`: Mac mini, MacBook Pro, wireless mouse, and relocated scan node.
 - `src/audio.js`: user-activated procedural ambience.
 - `favicon.svg`: the site and workstation mark.
+- `blog/**/post.json`: the shared publishing information for each article's listings and build discovery.
+- `build/blog.js`: article discovery, validation, and shared HTML list generation.
 - `assets/`: original generated images, optimized delivery images, generation records, and scene parameters.
 - `tests/`: browser acceptance checks.
 - `vite.config.js`: static build and development-only CSP adjustments.
