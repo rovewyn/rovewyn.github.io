@@ -82,7 +82,7 @@ Local verification alone does not end the preview session.
 
 ## Git Workflow & Cleanup
 
-Use `codex/` feature branches during development. After merging a PR, remove both its local and remote feature branches:
+After merging a PR, remove both its local and remote feature branches:
 
 1. Confirm the PR is merged and neither branch contains new or unmerged work; delete the remote feature branch.
 2. Run `git fetch --prune origin`.
@@ -98,5 +98,9 @@ Use Conventional Commits for commit messages and pull request titles. Keep commi
 ## Security & Configuration
 
 Review the Content Security Policy when changing scripts, styles, or assets. Keep production resources same-origin; do not widen production policy to accommodate development-only HMR. Never commit credentials or machine-specific configuration.
+
+Never include machine-specific absolute filesystem paths from a real local environment in committed content. Use repository-relative paths, environment variables, or generic placeholders instead. Standard platform paths required by code or tooling, including system library paths and interpreter shebangs, and clearly synthetic paths used in tests or examples are allowed.
+
+Never include the current local operating system user's real name or username in committed content. Redact it or use a generic placeholder instead. This rule applies to all files included in a commit, including source files, documentation, configuration examples, fixtures, and retained generated assets.
 
 The Vite build must be published from `dist/` using GitHub Actions. Changing the repository's Pages source and publishing are release steps separate from local implementation.
