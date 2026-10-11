@@ -82,7 +82,7 @@ Local verification alone does not end the preview session.
 
 ## Git Workflow & Cleanup
 
-Use `codex/` feature branches during development. After merging a PR, remove both its local and remote feature branches:
+After merging a PR, remove both its local and remote feature branches:
 
 1. Confirm the PR is merged and neither branch contains new or unmerged work; delete the remote feature branch.
 2. Run `git fetch --prune origin`.
