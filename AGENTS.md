@@ -99,4 +99,8 @@ Use Conventional Commits for commit messages and pull request titles. Keep commi
 
 Review the Content Security Policy when changing scripts, styles, or assets. Keep production resources same-origin; do not widen production policy to accommodate development-only HMR. Never commit credentials or machine-specific configuration.
 
+Never include machine-specific absolute filesystem paths from a real local environment in committed content. Use repository-relative paths, environment variables, or generic placeholders instead. Standard platform paths required by code or tooling, including system library paths and interpreter shebangs, and clearly synthetic paths used in tests or examples are allowed.
+
+Never include the current local operating system user's real name or username in committed content. Redact it or use a generic placeholder instead. This rule applies to all files included in a commit, including source files, documentation, configuration examples, fixtures, and retained generated assets.
+
 The Vite build must be published from `dist/` using GitHub Actions. Changing the repository's Pages source and publishing are release steps separate from local implementation.
